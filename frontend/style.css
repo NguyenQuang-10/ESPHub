@@ -17,6 +17,7 @@ html{
 
 body {
     height: 100vh;
+    overflow: hidden;
 }
 
 span{
@@ -52,11 +53,20 @@ span{
     color: white;
 }
 
-.sidebar {
+#undertab {
     height: 100%;
-    width: 11.5vw;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar {
+    float: left;
+    height: 100%;
+    width: 11%;
     color: #818181;
     background: #242424;
+    overflow: hidden;
 }
 
 
@@ -76,13 +86,13 @@ span{
     display: block;
     padding: 0.5em;
 }
-.sbitem:link{
+a:link{
     text-decoration: none;
 }
-.sbitem:visited{
+a:visited{
     text-decoration: none;
 }
-.sbitem:active{
+a:active{
     text-decoration: none;
 }
 .sbitem:hover{
@@ -95,3 +105,20 @@ span{
     flex-direction: column;
     align-items: center;
 } 
+
+.contentpage {
+    overflow: scroll;
+    float: left;
+    width: 89%;
+    height: 100%;
+    background: #ffbb00;
+}
+
+#addnode {
+    display: inline;
+    width: 80%;
+    float: top;
+    background: #ffbb00;
+    color: #818181;
+    height: 1.5em;
+}

@@ -5,18 +5,18 @@ function getWindowSize(){
     return [x,y];
 }
 
-function updateSidebar(){
+function updateLayout(){
     var size = getWindowSize();
     var x = size[0];
 
-    if (x < 960){
+    if (x < 965){
         document.getElementById("widesidebar").style.display = 'none';
-        document.getElementById("narrowsidebar").style.display = 'block';
+        document.getElementById("narrowsidebar").style.display = 'inline-block';
     } else {
         document.getElementById("narrowsidebar").style.display = 'none';
-        document.getElementById("widesidebar").style.display = 'block';
+        document.getElementById("widesidebar").style.display = 'inline-block';
     }
 }
 
-window.onload = updateSidebar;
-window.onresize = updateSidebar;
+window.onload = updateLayout;
+window.onresize = updateLayout;
