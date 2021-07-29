@@ -111,14 +111,24 @@ a:active{
     float: left;
     width: 89%;
     height: 100%;
-    background: #ffbb00;
+    background: white;
+}
+
+#homepage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #addnode {
-    display: inline;
-    width: 80%;
+    display: block;
+    width: 98.5%;
     float: top;
     background: #ffbb00;
-    color: #818181;
-    height: 1.5em;
+    color:#242424;
+    margin: 0.5em;
+    padding: 0.5em;
+}
+#addnode:hover{
+    background: #FEC939;
 }
