@@ -1,6 +1,9 @@
 import os
 
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect
+from flask_socketio import SocketIO
+import socket
+import json
 
 CWD = os.path.abspath(os.path.dirname(__file__))
 
@@ -31,8 +34,28 @@ def create_app(test_config=None):
         pass
 
     # a simple page that says hello
+
     @app.route('/')
-    def hello():
+    def landing():
+        return redirect("/home", code=308)
+
+    @app.route('/home')
+    def home():
         return render_template("main.html") 
 
     return app
+
+app = create_app()
+socketio = SocketIO(app)
+@socketio.on('init')
+def response_init(data):
+    hostname = socket.gethostname()
+    ip = socket.gethostbyname(hostname)
+    nodejson = json.load(open("nodedata.json", 'r'))
+    nodejson["platformdata"]["hostname"] = hostname
+    nodejson["platformdata"]["ip"] = ip
+    nodestr = json.dumps(nodejson, indent=4)
+    socketio.emit('init', nodestr)
+
+if __name__ == '__main__':
+    socketio.run(app)
