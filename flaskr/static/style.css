@@ -132,3 +132,8 @@ a:active{
 #addnode:hover{
     background: #FEC939;
 }
+
+.nodemodal input {
+    width: 100%;
+    clear: both;
+}
