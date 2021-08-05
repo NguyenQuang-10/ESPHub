@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, request
 from flask_socketio import SocketIO
 import socket
 import json
@@ -39,8 +39,11 @@ def create_app(test_config=None):
     def landing():
         return redirect("/home", code=308)
 
-    @app.route('/home')
+    @app.route('/home', methods=["POST", "GET"])
     def home():
+        if request.method == 'POST':
+            print(request.form)
+            return render_template("main.html") 
         return render_template("main.html") 
 
     return app

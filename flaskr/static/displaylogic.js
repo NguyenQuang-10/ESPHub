@@ -55,7 +55,11 @@ var channelNumTracker = 0;
 $('#newnodemodal').on('hide.bs.modal', function () {
     channelNumTracker = 0;
     var chnform = document.getElementById("chnform");
-    chnform.innerHTML = ""
+    chnform.innerHTML = "";
+    var errors = document.getElementsByClassName("formerror");
+    for (var i = 0; i < errors.length; ++i){
+        errors[i].innerHTML = "";
+    }
 })
 
 function addChannel(){
@@ -95,4 +99,25 @@ function removeChannel(){
     var chnform = document.getElementById("chnform");
     chnform.removeChild(chnform.lastChild);
     channelNumTracker -= 1;
+}
+
+
+function submitForm(id){
+    var form = document.getElementById(id);
+    form.preven
+    form.submit();
+    console.log("shit");
+}
+
+function validateNodeForm(){
+    var containError = false;
+    let nodeform = document.forms["nodeform"];
+    if (!(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(nodeform["nodeip"].value))){
+        document.getElementById("nodeformIPerror").innerHTML = "Invalid IPv4 address";
+        console.log("penis")
+        containError = true;
+    }
+    if (containError == false){
+        submitForm("nodeform");
+    }
 }

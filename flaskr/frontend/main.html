@@ -49,36 +49,40 @@
 
     <!-- Modal -->
     <div class="modal fade" id="newnodemodal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog-scrollable nodemodal">
-            <div class="modal-dialog">
+        <form method='POST' action="" id="nodeform">
+            <div class="modal-dialog modal-dialog-scrollable nodemodal">
                 <div class="modal-content">
                     <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Node Settings</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="nodeform">
+                        
                             <label for="conntype">Connection type:</label> <br>
                             <select id="conntype" name="conntype">
                                 <option value="socket">Continuous Socket Connection</option>
                                 <option value="http">HTTP Request/Response Connection</option>
                             </select> <br><br>
                             <label for="nodeip">IP Address:</label> <br>
-                            <input type="text" id="nodeip" name="nodeip"> <br><br>
+                            <input type="text" id="nodeip" name="nodeip" required>
+                            <p class='formerror' id="nodeformIPerror"></p>
+                            <label for="nodedesc">Node Name:</label> <br>
+                            <input maxlength="100" type="text" id="nodename" name="nodename"><br><br>
                             <label for="nodedesc">Description:</label> <br>
                             <input maxlength="200" type="text" id="nodedesc" name="nodedesc"><br><br>
                             <div id="chnform"></div>
                             <a href="javascript:void(0)" onclick="addChannel()" id="addChnBtn">Add channel</a>
                             <a href="javascript:void(0)" onclick="removeChannel()" id="rmChbBtn" style="float: right;">Remove channel</a>
-                        </form>
+                        
                     </div>
-                    <!-- <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Save changes</button>
-                    </div> -->
+                    <div class="modal-footer" id="nodemodalfooter">
+                        <button type="button" class='btn me-auto' data-bs-dismiss="modal">Close</button>
+                        <button type='button' onclick="validateNodeForm()">what</button>
+                    </div>
                 </div>
             </div>
-        </div>
+            
+        </form>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>

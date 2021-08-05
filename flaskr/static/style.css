@@ -137,3 +137,7 @@ a:active{
     width: 100%;
     clear: both;
 }
+
+.formerror {
+    color: red;
+}
