@@ -79,6 +79,7 @@ function addChannel(){
     var chnform = document.getElementById("chnform");
     // new html for channel form, i dont know how to use format string lmao
     var cfHtmlString = '<div><h5>Channel ' + channelNumTracker.toString() + ' </h5> \
+    <input type="hidden" name="chn' + channelNumTracker.toString() +'" value="$^#&$strchn"> \
     <label for="chn' + channelNumTracker.toString() + 'name">Channel Name:</label> <br> \
     <input type="text" maxlength="50" id="chn' + channelNumTracker.toString() + 'name" name="chn' + channelNumTracker.toString() + 'name"><br><br> \
     <label for="chn' + channelNumTracker.toString() + 'inp">Channel Input Type: </label> <br> \
@@ -86,8 +87,8 @@ function addChannel(){
         <option value="switch">Switch</option> \
         <option value="variable">Slider</option> \
     </select><br><br> \
-    <label for="chn' + channelNumTracker.toString + 'desc">Channel Description:</label> \
-    <input type="text" maxlength="200" id="chn' + channelNumTracker.toString + 'desc" name="chn' + channelNumTracker.toString + 'desc"><br><br></div>'
+    <label for="chn' + channelNumTracker.toString() + 'desc">Channel Description:</label> \
+    <input type="text" maxlength="200" id="chn' + channelNumTracker.toString() + 'desc" name="chn' + channelNumTracker.toString() + 'desc"><br><br></div>'
     
     var cfclone = htmlToElement(cfHtmlString);
 

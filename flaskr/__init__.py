@@ -42,8 +42,26 @@ def create_app(test_config=None):
     @app.route('/home', methods=["POST", "GET"])
     def home():
         if request.method == 'POST':
-            print(request.form)
-            return render_template("main.html") 
+            nd = json.load(open("nodedata.json", "r"))
+            if request.form['formtype'] == 'newnodeform':
+                form = request.form
+                nodename = ''
+                
+                if form['nodename'] == '':
+                    nodename = form['nodeip']
+                else: 
+                    nodename = form['nodename']
+
+                nd['nodes'][nodename] = {}
+                curnode = nd['nodes'][nodename]
+                curnode['conntype'] = form['conntype']
+                curnode['nodeip'] = form['nodeip']
+                if form['nodedesc'] != '':
+                    curnode['nodedesc'] = form['nodedesc']
+                for key in form[5:]:
+                    print(key)
+            return render_template("main.html")
+        
         return render_template("main.html") 
 
     return app
