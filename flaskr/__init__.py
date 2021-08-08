@@ -4,6 +4,7 @@ from flask import Flask, render_template, redirect, request
 from flask_socketio import SocketIO
 import socket
 import json
+import sqlite3
 
 CWD = os.path.abspath(os.path.dirname(__file__))
 
@@ -33,36 +34,6 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # a simple page that says hello
-
-    @app.route('/')
-    def landing():
-        return redirect("/home", code=308)
-
-    @app.route('/home', methods=["POST", "GET"])
-    def home():
-        if request.method == 'POST':
-            nd = json.load(open("nodedata.json", "r"))
-            if request.form['formtype'] == 'newnodeform':
-                form = request.form
-                nodename = ''
-                
-                if form['nodename'] == '':
-                    nodename = form['nodeip']
-                else: 
-                    nodename = form['nodename']
-
-                nd['nodes'][nodename] = {}
-                curnode = nd['nodes'][nodename]
-                curnode['conntype'] = form['conntype']
-                curnode['nodeip'] = form['nodeip']
-                if form['nodedesc'] != '':
-                    curnode['nodedesc'] = form['nodedesc']
-                for key in form[5:]:
-                    print(key)
-            return render_template("main.html")
-        
-        return render_template("main.html") 
 
     return app
 
@@ -72,11 +43,44 @@ socketio = SocketIO(app)
 def response_init(data):
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
-    nodejson = json.load(open("nodedata.json", 'r'))
+    nodejson = {}
+    nodejson["platformdata"] = {}
     nodejson["platformdata"]["hostname"] = hostname
     nodejson["platformdata"]["ip"] = ip
     nodestr = json.dumps(nodejson, indent=4)
     socketio.emit('init', nodestr)
+
+@app.route('/')
+    def landing():
+        return redirect("/home", code=308)
+
+# please remeber to escape the parameter before inserting later
+# TO DO:
+# ADD validation via websocket (maybe?) for channel and node name
+# Add channel to save to db
+@app.route('/home', methods=["POST", "GET"])
+def home():
+
+    con = sqlite3.connect("data.db")
+    dbcur = con.cursor()
+
+    if request.method == 'POST':
+        form = request.form
+        print(form)
+        if form['formtype'] == 'newnodeform':
+            nodename = form['nodename']
+            if form['nodename'] == '':
+                nodename = form['nodeip']
+
+            dbcur.execute(f"INSERT INTO Nodes VALUES ( '{form['nodeip']}','{nodename}','{form['nodedesc']}')")
+            con.commit()
+            dbcur.execute(f"SELECT * FROM Nodes")
+            print(dbcur.fetchone())
+
+            
+            
+    return render_template("main.html") 
+
 
 if __name__ == '__main__':
     socketio.run(app)

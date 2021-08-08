@@ -78,7 +78,7 @@ function addChannel(){
     channelNumTracker += 1;
     var chnform = document.getElementById("chnform");
     // new html for channel form, i dont know how to use format string lmao
-    var cfHtmlString = '<div><h5>Channel ' + channelNumTracker.toString() + ' </h5> \
+    var cfHtmlString = '<div><h5>New Channel ' + channelNumTracker.toString() + ' </h5> \
     <input type="hidden" name="chn' + channelNumTracker.toString() +'" value="$^#&$strchn"> \
     <label for="chn' + channelNumTracker.toString() + 'name">Channel Name:</label> <br> \
     <input type="text" maxlength="50" id="chn' + channelNumTracker.toString() + 'name" name="chn' + channelNumTracker.toString() + 'name"><br><br> \
