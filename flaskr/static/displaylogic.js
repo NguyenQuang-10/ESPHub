@@ -79,9 +79,9 @@ function addChannel(){
     var chnform = document.getElementById("chnform");
     // new html for channel form, i dont know how to use format string lmao
     var cfHtmlString = '<div><h5>New Channel ' + channelNumTracker.toString() + ' </h5> \
-    <input type="hidden" name="chn' + channelNumTracker.toString() +'" value="$^#&$strchn"> \
     <label for="chn' + channelNumTracker.toString() + 'name">Channel Name:</label> <br> \
-    <input type="text" maxlength="50" id="chn' + channelNumTracker.toString() + 'name" name="chn' + channelNumTracker.toString() + 'name"><br><br> \
+    <input type="text" maxlength="50" id="chn' + channelNumTracker.toString() + 'name" name="chn' + channelNumTracker.toString() + 'name"> \
+    <p class="formerror" id="newnodeform_chn' + channelNumTracker.toString() + 'name_error"></p> \
     <label for="chn' + channelNumTracker.toString() + 'inp">Channel Input Type: </label> <br> \
     <select id="chn' + channelNumTracker.toString() + 'inp" name="chn' + channelNumTracker.toString() + 'inp"> \
         <option value="switch">Switch</option> \
@@ -91,6 +91,7 @@ function addChannel(){
     <input type="text" maxlength="200" id="chn' + channelNumTracker.toString() + 'desc" name="chn' + channelNumTracker.toString() + 'desc"><br><br></div>'
     
     var cfclone = htmlToElement(cfHtmlString);
+    document.getElementById("newnodeform_numberOfChn").value = channelNumTracker
 
     chnform.appendChild(cfclone);
 
@@ -100,25 +101,62 @@ function removeChannel(){
     var chnform = document.getElementById("chnform");
     chnform.removeChild(chnform.lastChild);
     channelNumTracker -= 1;
+    document.getElementById("newnodeform_numberOfChn").value = channelNumTracker
 }
 
 
-function submitForm(id){
-    var form = document.getElementById(id);
-    form.preven
-    form.submit();
-    console.log("shit");
-}
+let newnodeform = document.forms["newnodeform"];
 
-function validateNodeForm(){
+function validateNewNodeForm(){
+    
+
     var containError = false;
-    let nodeform = document.forms["nodeform"];
-    if (!(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(nodeform["nodeip"].value))){
-        document.getElementById("nodeformIPerror").innerHTML = "Invalid IPv4 address";
+    if (!(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(newnodeform["nodeip"].value))){
+        document.getElementById("newnodeform_nodeip_error").innerHTML = "Invalid IPv4 address";
         console.log("penis")
         containError = true;
     }
-    if (containError == false){
-        submitForm("nodeform");
+
+    
+
+    // validate nodename and ip is unique 
+    nodename = newnodeform['nodename'].value;
+    nodeip = newnodeform['nodeip'].value;
+    chnnames = [];
+
+    var numberOfChn = parseInt(newnodeform['numberOfChn'].value);
+    if (numberOfChn != 0){
+        for(var i = 1; i <= numberOfChn; i++){
+            var name = newnodeform['chn' + i.toString() + 'name'].value;
+            if (chnnames.indexOf(name) == -1){
+                chnnames.push(name);
+            } else {
+                document.getElementById('newnodeform_chn' + i.toString() + 'name_error').innerHTML = "Duplicate name, ensure channel name is <b>unique</b>";
+                containError = true;
+            }
+        }
     }
+
+    if (containError == false){
+        socketio.emit('vldnodeform', {nodename, nodeip, chnnames})        
+    }
+    
 }
+
+socketio.on('newNodeFormError', function(errors){
+    console.log(errors);
+    socketio.emit('debug', errors.length);
+    containError = false;
+    if (errors.length > 0 ){
+        for (const i in errors){
+            document.getElementById('newnodeform_' + errors[i] + '_error').innerHTML = 'Duplicate detected, try something else';
+        }
+        containError = true;
+    }
+
+    if (containError == true){
+        return false;
+    } else {
+        newnodeform.submit();
+    }
+})

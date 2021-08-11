@@ -8,6 +8,9 @@ import sqlite3
 
 CWD = os.path.abspath(os.path.dirname(__file__))
 
+con = sqlite3.connect("data.db")
+dbcur = con.cursor()
+
 def get_html(relative_file_path):
     file = open(os.path.join(CWD, relative_file_path), "r")
     outstr = file.read()
@@ -50,20 +53,39 @@ def response_init(data):
     nodestr = json.dumps(nodejson, indent=4)
     socketio.emit('init', nodestr)
 
+@socketio.on('debug')
+def debug(data):
+    print(data)
+
+@socketio.on('vldnodeform')
+def validatenodename(data):
+    print("New node form validation data: ", end="")
+    print(data)
+    errors = []
+    dbcur.execute(f"SELECT COUNT(ip) FROM Nodes WHERE ip='{data['nodeip']}' ")
+    if dbcur.fetchone()[0] > 0:
+        print('[ERROR] Duplicate IP Address')
+        errors.append('nodeip')
+    dbcur.execute(f"SELECT COUNT(name) FROM Nodes WHERE name='{data['nodename']}' ")
+    if dbcur.fetchone()[0] > 0:
+        print('[ERROR] Duplicate Node Name')
+        errors.append('nodename')
+    for chnname in data['chnnames']:
+        dbcur.execute(f"SELECT COUNT(name) FROM Channels WHERE name='{chnname}' ")
+        if dbcur.fetchone()[0] > 0:
+            print('[ERROR] Duplicate Channel Name')
+            errors.append('chn' + str(data['chnnames'].index(chnname) + 1) + 'name')
+    socketio.emit('newNodeFormError', errors)
+
 @app.route('/')
-    def landing():
-        return redirect("/home", code=308)
+def landing():
+    return redirect("/home", code=308)
 
 # please remeber to escape the parameter before inserting later
 # TO DO:
-# ADD validation via websocket (maybe?) for channel and node name
-# Add channel to save to db
+#
 @app.route('/home', methods=["POST", "GET"])
 def home():
-
-    con = sqlite3.connect("data.db")
-    dbcur = con.cursor()
-
     if request.method == 'POST':
         form = request.form
         print(form)
@@ -72,12 +94,21 @@ def home():
             if form['nodename'] == '':
                 nodename = form['nodeip']
 
-            dbcur.execute(f"INSERT INTO Nodes VALUES ( '{form['nodeip']}','{nodename}','{form['nodedesc']}')")
-            con.commit()
-            dbcur.execute(f"SELECT * FROM Nodes")
-            print(dbcur.fetchone())
+            dbcur.execute(f"INSERT INTO Nodes(ip, name, conn, desc) VALUES ( '{form['nodeip']}','{nodename}', '{form['conntype']}','{form['nodedesc']}')")
+            # con.commit()
+            dbcur.execute(f"SELECT * FROM Nodes WHERE name='{nodename}'")
+            node_id = dbcur.fetchone()[0]
 
+            numberOfChn = int(form['numberOfChn'])
+
+            for i in range(1,numberOfChn+1):
+                dbcur.execute(f"INSERT INTO Channels(name, input, desc, node_id) VALUES ( '{form['chn' + str(i) + 'name']}', '{form['chn' + str(i) + 'inp']}', '{form['chn' + str(i) + 'desc']}', '{int(node_id)}')")
             
+            con.commit()
+
+            return render_template("main.html")
+
+        return render_template("main.html")
             
     return render_template("main.html") 
 
