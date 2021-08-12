@@ -160,3 +160,7 @@ socketio.on('newNodeFormError', function(errors){
         newnodeform.submit();
     }
 })
+
+if ( window.history.replaceState ) {
+    window.history.replaceState( null, null, window.location.href );
+  }

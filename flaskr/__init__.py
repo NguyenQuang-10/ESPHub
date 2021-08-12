@@ -50,6 +50,30 @@ def response_init(data):
     nodejson["platformdata"] = {}
     nodejson["platformdata"]["hostname"] = hostname
     nodejson["platformdata"]["ip"] = ip
+
+    dbcur.execute('SELECT * FROM Nodes')
+    nodeinfo = dbcur.fetchall()
+    nodejson['nodes'] = {}
+    for node in nodeinfo:
+        nodeid = node[0]
+        nodeip = node[1]
+        nodename = node[2]
+        nodetype = node[3]
+        nodedesc = node[4]
+        nodejson['nodes'][nodename] = {}
+        nodejson['nodes'][nodename]['ip'] = nodeip
+        nodejson['nodes'][nodename]['type'] = nodetype
+        nodejson['nodes'][nodename]['desc'] = nodedesc
+        dbcur.execute(f'SELECT * FROM Channels WHERE node_id = "{nodeid}"')
+        channels = dbcur.fetchall()
+        nodejson['nodes'][nodename]['channels']= {}
+        for chn in channels:
+            nodejson['nodes'][nodename]['channels'][chn[1]] = {
+                'inp' : chn[2],
+                'desc' : chn[3]
+            }
+
+
     nodestr = json.dumps(nodejson, indent=4)
     socketio.emit('init', nodestr)
 
