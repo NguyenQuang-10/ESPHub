@@ -77,7 +77,9 @@ function addChannel(){
     
     channelNumTracker += 1;
     var chnform = document.getElementById("chnform");
-    // new html for channel form, i dont know how to use format string lmao
+    // new html for channel form,
+    // When i did this i didn't know about templates, so... yeah sorry
+    // TODO HERE: Replace this string with HTML template
     var cfHtmlString = '<div><h5>New Channel ' + channelNumTracker.toString() + ' </h5> \
     <label for="chn' + channelNumTracker.toString() + 'name">Channel Name:</label> <br> \
     <input type="text" maxlength="50" id="chn' + channelNumTracker.toString() + 'name" name="chn' + channelNumTracker.toString() + 'name"> \
@@ -163,4 +165,12 @@ socketio.on('newNodeFormError', function(errors){
 
 if ( window.history.replaceState ) {
     window.history.replaceState( null, null, window.location.href );
-  }
+}
+
+function checkState(checkbox) {
+    if (checkbox.checked) {
+        console.log("The switch is on");
+    } else {
+        console.log("the switch is off");
+    }
+}

@@ -4,6 +4,7 @@
     <title>Điều khiển bể cá</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/toggleswitch.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
@@ -37,9 +38,34 @@
         </span>
 
         <span class="contentpage" id="homepage">
+            <div class='contentContainer'>                
+                <div class='contentTitlecard'>
+                    <span class='nodetitle'>Penis</span><span class='nodecontainerip'>very very small text</span>
+                </div>
+                <div class='contentBody'>
+                    <div class='descContainer'>
+                    </div>
+                    <div class='channelContainer'>
+                        <div class='channelTitlecard'>
+                            <span>Penis</span>
+                        </div>
+                        <div class='channelBody'>
+                            
+                            <div class='descContainer'>
+                            </div>
 
-            <!-- Modal -->
-            
+                            <div class='channelInput'>
+                                <label class="switch">
+                                    <input type="checkbox" onclick="checkState(this)">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal -->           
             <a href="" id="addnode" data-bs-toggle="modal" data-bs-target="#newnodemodal"> 
                 <i class="bi bi-plus-square"></i> Add new node
             </a>
