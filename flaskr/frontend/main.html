@@ -38,33 +38,43 @@
         </span>
 
         <span class="contentpage" id="homepage">
-            <div class='contentContainer'>                
-                <div class='contentTitlecard'>
-                    <span class='nodetitle'>Penis</span><span class='nodecontainerip'>very very small text</span>
-                </div>
-                <div class='contentBody'>
-                    <div class='descContainer'>
+            <template id='nodeContainerTemplate'>
+                <div class='contentContainer'>                
+                    <div class='contentTitlecard'>
+                        <span class='nodetitle'>Penis</span><span class='nodecontainerip'>very very small text</span>
                     </div>
-                    <div class='channelContainer'>
-                        <div class='channelTitlecard'>
-                            <span>Penis</span>
+                    <div class='contentBody'>
+                        <div class='descContainer'>
                         </div>
-                        <div class='channelBody'>
-                            
-                            <div class='descContainer'>
+                        <div class='channelContainer'>
+                            <div class='channelTitlecard'>
                             </div>
+                            <div class='channelBody'>
+                                <!-- Insert channels -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
 
-                            <div class='channelInput'>
-                                <label class="switch">
-                                    <input type="checkbox" onclick="checkState(this)">
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
-                            
-                        </div>
-                    </div>
+            <template id='channelSwitchInputTemplate'>
+                <div class='channelInput'>
+                    <div>
+                        <label class="switch">
+                            <input type="checkbox" onclick="checkState(this)">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class='channelSwitchLabel'>Name</span>
                 </div>
+                    
+                    <div><i class="bi bi-question-circle"></i></div>
+                </div>
+            </template>
+
+            <div id="nodesArea">
+
             </div>
+
             <!-- Modal -->           
             <a href="" id="addnode" data-bs-toggle="modal" data-bs-target="#newnodemodal"> 
                 <i class="bi bi-plus-square"></i> Add new node

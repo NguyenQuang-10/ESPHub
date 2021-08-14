@@ -37,10 +37,23 @@ socketio.on('connect', function(){
 })
 
 socketio.on("init", function(nodestr){
-    const nodejson = JSON.parse(nodestr)
-    console.log(nodestr)
-    document.getElementById("hostname").innerHTML = nodejson["platformdata"]["hostname"]
-    document.getElementById("hostIP").innerHTML = nodejson["platformdata"]["ip"]
+    console.log(document.getElementById('homepage').offsetHeight);
+    const nodejson = JSON.parse(nodestr);
+    console.log(nodestr);
+    document.getElementById("hostname").innerHTML = nodejson["platformdata"]["hostname"];
+    document.getElementById("hostIP").innerHTML = nodejson["platformdata"]["ip"];
+    nodesArea = document.getElementById('nodesArea');
+    nodesArea.innerHTML = "";
+    for (const node in nodejson['nodes']){
+        console.log(node)
+        var nodeContainerTemplate = document.getElementById('nodeContainerTemplate');
+        var nodeContainer = nodeContainerTemplate.content.cloneNode(true);
+        nodeContainer.querySelector('.contentContainer').id = node + '_container';
+        nodeContainer.querySelector('.nodetitle').innerHTML = node;
+        nodeContainer.querySelector('.nodecontainerip').innerHTML = nodejson['nodes'][node]['ip'];
+        nodeContainer.querySelector('.descContainer').innerHTML = nodejson['nodes'][node]['desc']
+        nodesArea.appendChild(nodeContainer);
+    }
 })
 
 var myModal = document.getElementById('myModal')
@@ -174,3 +187,4 @@ function checkState(checkbox) {
         console.log("the switch is off");
     }
 }
+ 
