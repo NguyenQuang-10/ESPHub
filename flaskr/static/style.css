@@ -178,25 +178,21 @@ a:active{
     font-size: 9pt;
 }
 
-.channelContainer {
+.channelsContainer {
     border: black 1px solid;
     border-radius: 0.2em;
     /* margin: 0.7em; */
     margin-top: 0.3em;
-    padding: 0.5em;
-}
-
-.channelTitlecard {
-    font-size: 15pt;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    border-bottom: rgb(0, 0, 0) solid;
-    border-width: 1px;
+    /* padding: 0.5em; */
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    padding-top: 0.5em;
+    padding-bottom: 0;
 }
 
 .channelInput {
-    padding-top: 0.5em;
+    padding-top: 0em;
+    padding-bottom: 0.5em;
     padding-left: 0;
     padding-right: 0.5em;
     display: flex;
@@ -208,10 +204,17 @@ a:active{
     align-items: center;
 }
 
-.channelSwitchLabel {
-    text-align: center;
+.channelLabel {
+    text-align: left;
     margin-left: 0.5em;
-    font-size: 13pt;
+    font-size: 10pt;
+}
+.descContainer {
+    margin-top: 0.5em;
+}
+
+.channelInputLeftGroup {
+    width: 90%;
 }
 
 #nodesArea {

@@ -8,14 +8,13 @@ cur.execute(""" CREATE TABLE Nodes (
     id integer PRIMARY KEY AUTOINCREMENT,
     ip text UNIQUE,
     name text UNIQUE,
-    conn text,
     desc text
 )
 """)
 
 cur.execute("""CREATE TABLE Channels (
     id integer PRIMARY KEY AUTOINCREMENT,
-    name text UNIQUE,
+    name text,
     input text,
     desc text,
     node_id integer

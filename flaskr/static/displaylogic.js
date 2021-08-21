@@ -36,6 +36,18 @@ socketio.on('connect', function(){
     console.log('Socket.IO connection successful')
 })
 
+// add description functionality later
+function getChannelDocFrag(tempid, name, ip, desc=null){
+    var template = document.getElementById(tempid)
+    var clone = template.content.cloneNode(true);
+    var inputTag = clone.querySelector('input');
+    inputTag.dataset.name = name;
+    inputTag.dataset.ip = ip;
+    clone.querySelector('.channelLabel').innerHTML = name;
+
+    return clone;
+}
+
 socketio.on("init", function(nodestr){
     console.log(document.getElementById('homepage').offsetHeight);
     const nodejson = JSON.parse(nodestr);
@@ -48,10 +60,26 @@ socketio.on("init", function(nodestr){
         console.log(node)
         var nodeContainerTemplate = document.getElementById('nodeContainerTemplate');
         var nodeContainer = nodeContainerTemplate.content.cloneNode(true);
-        nodeContainer.querySelector('.contentContainer').id = node + '_container';
+
+        nodeContainerId = node + '_container';
+
+        nodeContainer.querySelector('.contentContainer').id = nodeContainerId;
         nodeContainer.querySelector('.nodetitle').innerHTML = node;
-        nodeContainer.querySelector('.nodecontainerip').innerHTML = nodejson['nodes'][node]['ip'];
+        var ip = nodejson['nodes'][node]['ip'];
+        nodeContainer.querySelector('.nodecontainerip').innerHTML = ip;
         nodeContainer.querySelector('.descContainer').innerHTML = nodejson['nodes'][node]['desc']
+
+        for (const channel in nodejson['nodes'][node]['channels']){
+            var inptype = nodejson['nodes'][node]['channels'][channel]['inp'];
+            var channelDocFrag;
+            if (inptype === 'switch'){
+                channelDocFrag = getChannelDocFrag('channelSwitchInputTemplate', channel, ip, null);
+            } else if (inptype === 'variable'){
+                channelDocFrag = getChannelDocFrag('channelSliderInputTemplate', channel, ip, null);
+            }
+            nodeContainer.querySelector('.channelsContainer').appendChild(channelDocFrag, channel, null);
+        }
+
         nodesArea.appendChild(nodeContainer);
     }
 })
@@ -76,18 +104,6 @@ $('#newnodemodal').on('hide.bs.modal', function () {
 })
 
 function addChannel(){
-
-    // <h5>Channel <span id="chnnum"></span></h5>
-    // <label for="chnname">Channel Name</label> <br>
-    // <input type="text" maxlength="50" id="chnname" name="chnname"><br><br>
-    // <label for="chninp">Channel Input Type: </label> <br>
-    // <select id="chninp" name="chninp">
-    //     <option value="switch">Switch</option>
-    //     <option value="variable">Slider</option>
-    // </select><br><br>
-    // <label for="chndesc">Channel Description</label>
-    // <input type="text" maxlength="200" id="chndesc" name="chndesc"><br><br></br>
-    
     channelNumTracker += 1;
     var chnform = document.getElementById("chnform");
     // new html for channel form,
@@ -95,7 +111,7 @@ function addChannel(){
     // TODO HERE: Replace this string with HTML template
     var cfHtmlString = '<div><h5>New Channel ' + channelNumTracker.toString() + ' </h5> \
     <label for="chn' + channelNumTracker.toString() + 'name">Channel Name:</label> <br> \
-    <input type="text" maxlength="50" id="chn' + channelNumTracker.toString() + 'name" name="chn' + channelNumTracker.toString() + 'name"> \
+    <input type="text" maxlength="20" id="chn' + channelNumTracker.toString() + 'name" name="chn' + channelNumTracker.toString() + 'name"> \
     <p class="formerror" id="newnodeform_chn' + channelNumTracker.toString() + 'name_error"></p> \
     <label for="chn' + channelNumTracker.toString() + 'inp">Channel Input Type: </label> <br> \
     <select id="chn' + channelNumTracker.toString() + 'inp" name="chn' + channelNumTracker.toString() + 'inp"> \
@@ -122,8 +138,13 @@ function removeChannel(){
 
 let newnodeform = document.forms["newnodeform"];
 
+// NOTE: browser automatically escape "\" so thats cool
 function validateNewNodeForm(){
-    
+    var formerrorsSelector = newnodeform.getElementsByClassName("formerror");
+
+    for (var i = 0 ; i < formerrorsSelector.length; i++){
+        formerrorsSelector[i].innerHTML = "";
+    }
 
     var containError = false;
     if (!(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(newnodeform["nodeip"].value))){
@@ -137,6 +158,8 @@ function validateNewNodeForm(){
     // validate nodename and ip is unique 
     nodename = newnodeform['nodename'].value;
     nodeip = newnodeform['nodeip'].value;
+
+    // For use with new channel form not new node form, don't send yet
     chnnames = [];
 
     var numberOfChn = parseInt(newnodeform['numberOfChn'].value);
@@ -153,13 +176,14 @@ function validateNewNodeForm(){
     }
 
     if (containError == false){
-        socketio.emit('vldnodeform', {nodename, nodeip, chnnames})        
+        socketio.emit('vldnodeform', {nodename, nodeip})        
     }
     
 }
 
 socketio.on('newNodeFormError', function(errors){
     console.log(errors);
+    console.log('I hate life');
     socketio.emit('debug', errors.length);
     containError = false;
     if (errors.length > 0 ){
@@ -179,12 +203,23 @@ socketio.on('newNodeFormError', function(errors){
 if ( window.history.replaceState ) {
     window.history.replaceState( null, null, window.location.href );
 }
-
-function checkState(checkbox) {
-    if (checkbox.checked) {
-        console.log("The switch is on");
-    } else {
-        console.log("the switch is off");
+ 
+function handleInput(input){
+    // console.log(input.className);
+    var chnname = input.dataset.name;
+    var ip = input.dataset.ip;
+    if (input.className === 'switchInput'){
+        var checked = input.checked
+        socketio.emit('input', {ip, chnname, checked})
+        // if (input.checked) {
+        //     // console.log("The switch is on");
+            
+        // } else {
+        //     // console.log("the switch is off");
+        // }
+    } else if (input.className === 'variableInputSlider') {
+        // console.log(input.value);
+        var value = input.value;
+        socketio.emit('input', {ip, chnname, value})
     }
 }
- 

@@ -7,5 +7,6 @@ share
 data.db
 instance
 *.pyc
-__pycache__/
+flaskr/__pycache__/
+experimentfiles
 

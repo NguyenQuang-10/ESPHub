@@ -1,0 +1,16 @@
+
+MVP:
+Convert node and channel container into template - done
+Implement container generation for node (done) and channels (done)
+send data when input change (semi-done)
+Implement connect to node on startup, check state of nodes to initilize state of input correctly
+Implement data communication protocol
+Help, tips
+
+Other goodies:
+description functionality
+display connection type
+display
+Connection state of each node
+Modify node and channel info
+
