@@ -7,6 +7,7 @@ import socket
 import json
 import sqlite3
 import threading
+import time
 
 CWD = os.path.abspath(os.path.dirname(__file__))
 
@@ -14,40 +15,56 @@ con = sqlite3.connect("data.db")
 dbcur = con.cursor()
 
 class ConnectionHanlder:
-    def __init__(self, sockfd):
-        self.server = sockfd
+    def __init__(self):
+        self.__tcpserver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Let user decide port from a config file later
+        self.__tcpserver.bind(("0.0.0.0", 5501))
+        self.__udpserver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.__udpserver.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.tcp_ip_conn_table = {}
-        self.pin_gpio_table = {
-            "D1" : "5",
-            "D2" : "4",
-            "D3" : "0",
-            "D4" : "2",
-            "D1" : "14",
-            "D2" : "12",
-            "D3" : "13",
-            "D4" : "15"
-        }
 
-    def __tcp_server(self):
-        self.server.listen()
+    def __tcp_listen(self):
+        self.__tcpserver.listen()
         print("Starting TCP Server...")
         while True:
-            conn, addr = self.server.accept()
+            conn, addr = self.__tcpserver.accept()
             self.tcp_ip_conn_table[addr] = conn
 
+    # Message size always smaller than 64 bytes
     def send_cmd(self, ip, channel, value):
         send_target = self.tcp_ip_conn_table[ip]
-        msg = "CMD" + "\n" + channel + "\n" + value
-    # def open_tcp_server(self):
-    #     self.server.
+        msg = "CMD" + "\n" + channel + "\n" + value + "\n"
+        ascii_msg = msg.encode('ascii')
+        if len(ascii_msg) < 64:
+            ascii_msg += b' ' * (64 - len(ascii_msg))
+        tsend_thread = threading.Thread(target=send_target.send, args=(ascii_msg,))
+        tsend_thread.start()
+        
+    def open_tcp(self):
+        listen_thread = threading.Thread(target=self.__tcp_listen)
+        listen_thread.start()
+
+    # Broadcast bind message for 
+    def __udp_broadcast(self):
+        start_time = time.time()
+        # start_length = len(self.tcp_ip_conn_table)
+        bindMessage = "&!#@^OpESPHub_Bind"
+        bindMessage += ' ' * (64 - len(bindMessage))
+        while (time.time() - start_time < 10):            
+            self.__udpserver.sendto(bindMessage.encode("ascii"), ("192.168.1.255",5500))
+            # if (len(self.tcp_ip_conn_table) >)
+
+    def udp_discovery(self):
+        udp_thread = threading.Thread(target=self.__udp_broadcast)
+        udp_thread.start()
+        
+        
 
 def get_html(relative_file_path):
     file = open(os.path.join(CWD, relative_file_path), "r")
     outstr = file.read()
     return outstr
 
-def initiateSocketConnection():
-    pass
 
 def getNodesInfo():
     hostname = socket.gethostname()
@@ -108,6 +125,8 @@ def create_app(test_config=None):
 
 app = create_app()
 socketio = SocketIO(app)
+connection_handler = ConnectionHanlder()
+connection_handler.open_tcp()
 
 # print(nodejson)
 
@@ -147,6 +166,11 @@ def validatenodename(data):
 def handleInput(data):
     print('Input data: ', end='')
     print(data)
+
+@socketio.on('scanIP')
+def scanIP():
+    pass
+    
 
 @app.route('/')
 def landing():

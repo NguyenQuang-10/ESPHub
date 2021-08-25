@@ -131,7 +131,7 @@ a:active{
 
 #addnode {
     display: block;
-    width: 98.5%;
+    width: 100%;
     float: top;
     background: #ffbb00;
     color:#242424;
@@ -153,11 +153,10 @@ a:active{
 
 .contentContainer {
     background: white;
-    width: 98.5%;
+    width: 100%;
     padding: 0.5em;
     margin-top: 0.25em;
     margin-bottom: 0.25em;
-    margin-left: 0.34em;
 }
 
 .contentTitlecard {

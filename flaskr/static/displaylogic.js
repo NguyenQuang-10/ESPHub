@@ -223,3 +223,7 @@ function handleInput(input){
         socketio.emit('input', {ip, chnname, value})
     }
 }
+
+function scanIP(){
+    socketio.emit('scanIP', "")
+}

@@ -112,7 +112,10 @@
                                 <input type="hidden" name="numberOfChn" id="newnodeform_numberOfChn" value="0">
                             </fieldset>
                             <label for="nodeip">IP Address:</label> <br>
-                            <input type="text" name="nodeip" required>
+                            <select id="ipdropdown" name="nodeip">
+                                <option value="manual">Manually enter IP Address</option>
+                            </select> 
+                            <button type='button' id="scanip" style="margin-left: 0.5em;" onclick="scanIP()">Scan</button>
                             <p class='formerror' id="newnodeform_nodeip_error"></p>
                             <label for="nodedesc">Node Name:</label> <br>
                             <input maxlength="100" type="text" name="nodename">
