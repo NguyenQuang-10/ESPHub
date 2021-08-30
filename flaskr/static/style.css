@@ -50,6 +50,7 @@ span{
     justify-content: center;
     color: #7b7b7b;
     text-align: right;
+    font-size: small;
 }
 #hostname {
     color: white;
@@ -157,14 +158,22 @@ a:active{
     padding: 0.5em;
     margin-top: 0.25em;
     margin-bottom: 0.25em;
+    font-size: large;
 }
 
 .contentTitlecard {
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
     border-bottom: 1px rgb(0, 0, 0) solid;
     height: 2.5em;
+}
+
+.nodeTitleAndIp {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 }
 
 .nodetitle {
@@ -184,7 +193,7 @@ a:active{
     margin-top: 0.3em;
     /* padding: 0.5em; */
     padding-left: 0.5em;
-    padding-right: 0.5em;
+    padding-right: 0em;
     padding-top: 0.5em;
     padding-bottom: 0;
 }
@@ -218,4 +227,8 @@ a:active{
 
 #nodesArea {
     width: 100%;
+}
+
+.channelIcons i {
+    margin-left: 0.5em;
 }

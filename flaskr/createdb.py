@@ -16,6 +16,7 @@ cur.execute("""CREATE TABLE Channels (
     id integer PRIMARY KEY AUTOINCREMENT,
     name text,
     input text,
+    pin text,
     desc text,
     node_id integer
 ) """)

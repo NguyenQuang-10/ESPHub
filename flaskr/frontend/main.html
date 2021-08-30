@@ -3,7 +3,10 @@
 <head>
     <title>Điều khiển bể cá</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/dropdownmenu.css">
+    <link rel="stylesheet" href="/static/slider.css">
     <link rel="stylesheet" href="/static/style.css">
+    
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
@@ -41,7 +44,16 @@
             <template id='nodeContainerTemplate'>
                 <div class='contentContainer'>                
                     <div class='contentTitlecard'>
-                        <span class='nodetitle'>Penis</span><span class='nodecontainerip'>very very small text</span>
+                        <span class="nodeTitleAndIp"><span class='nodetitle'>bruh</span><span class='nodecontainerip'>very very small text</span></span>
+
+                        <!-- <link rel="stylesheet" href="/static/dropdownmenu.css"> -->
+
+                        <div class="dropdownMenu"><i onclick="displayMenu(this)" class="bi bi-three-dots-vertical vdm"></i>
+                            <div class="dropdown-content">
+                                <a onclick="appendChannel(this)"><i class="bi bi-plus-square"></i> Add channel</a>
+                                <a onclick="changeNodeSetting(this)"><i class="bi bi-gear"></i> Node Settings</a>
+                                <a onclick="deleteNode(this)"><i class="bi bi-trash"></i> Delete Node</a>
+                        </div></div>
                     </div>
                     <div class='contentBody'>
                         <div class='descContainer'>
@@ -66,21 +78,33 @@
                 
                     
                     <div><i class="bi bi-question-circle"></i></div>
+                    <div><i class="bi bi-three-dots-vertical"></i></div>
                 </div>
             </template>
 
-            <link rel="stylesheet" href="/static/slider.css">
+           
             <template id='channelSliderInputTemplate'>
+
                 <div class='channelInput'>
                     <div class='channelInputLeftGroup'>
                         
                         <div class="slidecontainer">
-                            <input type="range" min="0" max="100" value="50" class="variableInputSlider" oninput='handleInput(this)'>
+                            <input type="range" min="0" max="255" value="50" class="variableInputSlider" oninput='handleInput(this)'>
                         </div>
                         <span class='channelLabel'>Name</span>
                     </div>
                     
-                    <div><i class="bi bi-question-circle"></i></div>
+                    <div class="channelIcons">
+                        <i class="bi bi-question-circle"></i>
+
+                        <div class="dropdownMenu">
+                            <i onclick="displayMenu(this)" class="bi bi-three-dots-vertical vdm"></i><br>
+                            <div class="dropdown-content" style="display: none;">
+                                <a onclick="changeChannelSetting(this)"><i class="bi bi-gear"></i> Channel Settings</a>
+                                <a onclick="deleteChannel(this)"><i class="bi bi-trash"></i> Delete Channel</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </template>
                         
@@ -112,18 +136,40 @@
                                 <input type="hidden" name="numberOfChn" id="newnodeform_numberOfChn" value="0">
                             </fieldset>
                             <label for="nodeip">IP Address:</label> <br>
-                            <select id="ipdropdown" name="nodeip">
-                                <option value="manual">Manually enter IP Address</option>
-                            </select> 
-                            <button type='button' id="scanip" style="margin-left: 0.5em;" onclick="scanIP()">Scan</button>
+                            <input name="nodeip" id="nodeip" required>
                             <p class='formerror' id="newnodeform_nodeip_error"></p>
                             <label for="nodedesc">Node Name:</label> <br>
                             <input maxlength="100" type="text" name="nodename">
                             <p class='formerror' id="newnodeform_nodename_error"></p>
                             <label for="nodedesc">Description:</label> <br>
                             <input maxlength="200" type="text" name="nodedesc"><br><br>
-                            <div id="chnform"></div>
-                            <a href="javascript:void(0)" onclick="addChannel()" id="addChnBtn">Add channel</a>
+                            <div class="chnform"></div>
+                            <a href="javascript:void(0)" onclick="addChannel(this)" id="addChnBtn">Add channel</a>
+                            <a href="javascript:void(0)" onclick="removeChannel()" id="rmChbBtn" style="float: right;">Remove channel</a>
+                        
+                    </div>
+                    <div class="modal-footer" id="nodemodalfooter">
+                        <button type="button" class='btn me-auto' data-bs-dismiss="modal">Close</button>
+                        <button type='button' class='btn' onclick="validateNewNodeForm()">Submit</button>
+                    </div>
+                </div>
+            </div>
+            
+        </form>
+    </div>
+
+    <div class="modal fade" id="appendChannelModal" tabindex="-1" aria-hidden="true">
+        <form method='POST' onsubmit="validateNewNodeForm()" id="appendChannelForm">
+            <div class="modal-dialog modal-dialog-scrollable nodemodal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Add Channel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+
+                            <div class="chnform"></div>
+                            <a href="javascript:void(0)" onclick="addChannel(this)" id="addChnBtn">Add channel</a>
                             <a href="javascript:void(0)" onclick="removeChannel()" id="rmChbBtn" style="float: right;">Remove channel</a>
                         
                     </div>

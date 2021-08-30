@@ -37,13 +37,14 @@ socketio.on('connect', function(){
 })
 
 // add description functionality later
-function getChannelDocFrag(tempid, name, ip, desc=null){
+function getChannelDocFrag(tempid, name, pin, ip, desc=null){
     var template = document.getElementById(tempid)
     var clone = template.content.cloneNode(true);
     var inputTag = clone.querySelector('input');
     inputTag.dataset.name = name;
+    inputTag.dataset.pin = pin;
     inputTag.dataset.ip = ip;
-    clone.querySelector('.channelLabel').innerHTML = name;
+    clone.querySelector('.channelLabel').innerHTML = name + ' (GPIO' + pin + ')' ;
 
     return clone;
 }
@@ -64,6 +65,7 @@ socketio.on("init", function(nodestr){
         nodeContainerId = node + '_container';
 
         nodeContainer.querySelector('.contentContainer').id = nodeContainerId;
+        nodeContainer.querySelector('.dropdownMenu').dataset.node = node;
         nodeContainer.querySelector('.nodetitle').innerHTML = node;
         var ip = nodejson['nodes'][node]['ip'];
         nodeContainer.querySelector('.nodecontainerip').innerHTML = ip;
@@ -71,11 +73,12 @@ socketio.on("init", function(nodestr){
 
         for (const channel in nodejson['nodes'][node]['channels']){
             var inptype = nodejson['nodes'][node]['channels'][channel]['inp'];
+            var pin = nodejson['nodes'][node]['channels'][channel]['pin']
             var channelDocFrag;
             if (inptype === 'switch'){
-                channelDocFrag = getChannelDocFrag('channelSwitchInputTemplate', channel, ip, null);
+                channelDocFrag = getChannelDocFrag('channelSwitchInputTemplate', channel, pin, ip, null);
             } else if (inptype === 'variable'){
-                channelDocFrag = getChannelDocFrag('channelSliderInputTemplate', channel, ip, null);
+                channelDocFrag = getChannelDocFrag('channelSliderInputTemplate', channel, pin, ip, null);
             }
             nodeContainer.querySelector('.channelsContainer').appendChild(channelDocFrag, channel, null);
         }
@@ -103,9 +106,9 @@ $('#newnodemodal').on('hide.bs.modal', function () {
     }
 })
 
-function addChannel(){
+function addChannel(form){
     channelNumTracker += 1;
-    var chnform = document.getElementById("chnform");
+    var chnform = form.parentNode.getElementsByClassName("chnform")[0];
     // new html for channel form,
     // When i did this i didn't know about templates, so... yeah sorry
     // TODO HERE: Replace this string with HTML template
@@ -113,10 +116,26 @@ function addChannel(){
     <label for="chn' + channelNumTracker.toString() + 'name">Channel Name:</label> <br> \
     <input type="text" maxlength="20" id="chn' + channelNumTracker.toString() + 'name" name="chn' + channelNumTracker.toString() + 'name"> \
     <p class="formerror" id="newnodeform_chn' + channelNumTracker.toString() + 'name_error"></p> \
-    <label for="chn' + channelNumTracker.toString() + 'inp">Channel Input Type: </label> <br> \
+    <label for="chn' + channelNumTracker.toString() + 'inp">Channel Input Type: </label> \
     <select id="chn' + channelNumTracker.toString() + 'inp" name="chn' + channelNumTracker.toString() + 'inp"> \
         <option value="switch">Switch</option> \
         <option value="variable">Slider</option> \
+    </select><br><br> \
+    <label for="chn' + channelNumTracker.toString() + 'pin">GPIO: </label> \
+    <select id="chn' + channelNumTracker.toString() + 'pin" name="chn' + channelNumTracker.toString() + 'pin"> \
+        <option value="0">0</option> \
+        <option value="1">1</option> \
+        <option value="2">2</option> \
+        <option value="3">3</option> \
+        <option value="4">4</option> \
+        <option value="5">5</option> \
+        <option value="9">9</option> \
+        <option value="10">10</option> \
+        <option value="12">12</option> \
+        <option value="13">13</option> \
+        <option value="14">14</option> \
+        <option value="15">15</option> \
+        <option value="16">16</option> \
     </select><br><br> \
     <label for="chn' + channelNumTracker.toString() + 'desc">Channel Description:</label> \
     <input type="text" maxlength="200" id="chn' + channelNumTracker.toString() + 'desc" name="chn' + channelNumTracker.toString() + 'desc"><br><br></div>'
@@ -136,7 +155,7 @@ function removeChannel(){
 }
 
 
-let newnodeform = document.forms["newnodeform"];
+let activeform = document.forms["newnodeform"];
 
 // NOTE: browser automatically escape "\" so thats cool
 function validateNewNodeForm(){
@@ -207,10 +226,19 @@ if ( window.history.replaceState ) {
 function handleInput(input){
     // console.log(input.className);
     var chnname = input.dataset.name;
+    var pin = input.dataset.pin;
     var ip = input.dataset.ip;
+    var type = ""
     if (input.className === 'switchInput'){
         var checked = input.checked
-        socketio.emit('input', {ip, chnname, checked})
+        type="dig";
+        var value = "";
+        if (checked) {
+            value = 1;
+        } else {
+            value = 0
+        }
+        socketio.emit('input', {ip, type, pin, value})
         // if (input.checked) {
         //     // console.log("The switch is on");
             
@@ -220,10 +248,43 @@ function handleInput(input){
     } else if (input.className === 'variableInputSlider') {
         // console.log(input.value);
         var value = input.value;
-        socketio.emit('input', {ip, chnname, value})
+        type="pwm";
+        socketio.emit('input', {ip, type, pin, value})
     }
 }
 
 function scanIP(){
     socketio.emit('scanIP', "")
 }
+
+
+// Dropdown menu when for 3 vertical dot menu, this one is for the node menu
+
+/* When the user clicks on the button,
+toggle between hiding and showing the dropdown content */
+function collapseAllMenu(){
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.style.display = "none") {
+        openDropdown.style.display = "none";
+      }
+    }
+}
+
+function displayMenu(menu) {
+    collapseAllMenu();
+    menu.parentNode.getElementsByClassName('dropdown-content')[0].style.display = 'block';
+}
+  
+//   // Close the dropdown menu if the user clicks outside of it
+  window.onclick = function(event) {
+    if (!event.target.matches('.vdm')) {
+      collapseAllMenu();
+    }
+  }
+
+  window.onscroll = function(event) {
+    collapseAllMenu();
+  }

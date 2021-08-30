@@ -28,23 +28,25 @@ class ConnectionHanlder:
         print("Starting TCP Server...")
         while True:
             conn, addr = self.__tcpserver.accept()
-            self.tcp_ip_conn_table[addr] = conn
+            print(addr)
+            self.tcp_ip_conn_table[addr[0]] = conn
 
     # Message size always smaller than 64 bytes
-    def send_cmd(self, ip, channel, value):
+    def send_cmd(self, ip, inptype, pin, value):
         send_target = self.tcp_ip_conn_table[ip]
-        msg = "CMD" + "\n" + channel + "\n" + value + "\n"
+        msg = "CMD" + "\n" + inptype + "\n" + str(pin) + "\n" + str(value)
         ascii_msg = msg.encode('ascii')
         if len(ascii_msg) < 64:
             ascii_msg += b' ' * (64 - len(ascii_msg))
         tsend_thread = threading.Thread(target=send_target.send, args=(ascii_msg,))
         tsend_thread.start()
+        print(f"Sent message: \n{msg}")
         
     def open_tcp(self):
         listen_thread = threading.Thread(target=self.__tcp_listen)
         listen_thread.start()
 
-    # Broadcast bind message for 
+    # Broadcast bind message (for later feature not implemented yet)
     def __udp_broadcast(self):
         start_time = time.time()
         # start_length = len(self.tcp_ip_conn_table)
@@ -92,7 +94,8 @@ def getNodesInfo():
         for chn in channels:
             nodejson['nodes'][nodename]['channels'][chn[1]] = {
                 'inp' : chn[2],
-                'desc' : chn[3]
+                'pin' : chn[3],
+                'desc' : chn[4]
             }
 
 
@@ -164,8 +167,11 @@ def validatenodename(data):
 
 @socketio.on('input')
 def handleInput(data):
-    print('Input data: ', end='')
-    print(data)
+    # print('Input data: ', end='')
+    # print(data)
+    connection_handler.send_cmd(data["ip"],data["type"], data["pin"], data['value'])
+    
+
 
 @socketio.on('scanIP')
 def scanIP():
@@ -201,7 +207,7 @@ def home():
                 chnname = form['chn' + str(i) + 'name']
                 if chnname == '':
                     chnname = form['chn' + str(i) + 'pin']
-                dbcur.execute(f"INSERT INTO Channels(name, input, desc, node_id) VALUES ( '{form['chn' + str(i) + 'name']}', '{form['chn' + str(i) + 'inp']}' , '{form['chn' + str(i) + 'desc']}', '{int(node_id)}')")
+                dbcur.execute(f"INSERT INTO Channels(name, input, pin, desc, node_id) VALUES ( '{form['chn' + str(i) + 'name']}', '{form['chn' + str(i) + 'inp']}' , '{form['chn' + str(i) + 'pin']}' , '{form['chn' + str(i) + 'desc']}', '{int(node_id)}')")
             
             con.commit()
 
