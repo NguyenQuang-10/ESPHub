@@ -37,7 +37,7 @@ socketio.on('connect', function(){
 })
 
 // add description functionality later
-function getChannelDocFrag(tempid, name, pin, ip, desc=null){
+function getChannelDocFrag(tempid, parent, name, pin, ip, desc=null){
     var template = document.getElementById(tempid)
     var clone = template.content.cloneNode(true);
     var inputTag = clone.querySelector('input');
@@ -45,6 +45,9 @@ function getChannelDocFrag(tempid, name, pin, ip, desc=null){
     inputTag.dataset.pin = pin;
     inputTag.dataset.ip = ip;
     clone.querySelector('.channelLabel').innerHTML = name + ' (GPIO' + pin + ')' ;
+    var menu = clone.querySelector(".dropdown-content");
+    menu.dataset.node = parent;
+    menu.dataset.channel = name;
 
     return clone;
 }
@@ -65,100 +68,38 @@ socketio.on("init", function(nodestr){
         nodeContainerId = node + '_container';
 
         nodeContainer.querySelector('.contentContainer').id = nodeContainerId;
-        nodeContainer.querySelector('.dropdownMenu').dataset.node = node;
+        nodeContainer.querySelector('.dropdown-content').dataset.node = node;
         nodeContainer.querySelector('.nodetitle').innerHTML = node;
         var ip = nodejson['nodes'][node]['ip'];
         nodeContainer.querySelector('.nodecontainerip').innerHTML = ip;
         nodeContainer.querySelector('.descContainer').innerHTML = nodejson['nodes'][node]['desc']
 
+        var numberOfChannels = 0;
+
         for (const channel in nodejson['nodes'][node]['channels']){
+            numberOfChannels++;
             var inptype = nodejson['nodes'][node]['channels'][channel]['inp'];
             var pin = nodejson['nodes'][node]['channels'][channel]['pin']
             var channelDocFrag;
             if (inptype === 'switch'){
-                channelDocFrag = getChannelDocFrag('channelSwitchInputTemplate', channel, pin, ip, null);
+                channelDocFrag = getChannelDocFrag('channelSwitchInputTemplate', node, channel, pin, ip, null);
             } else if (inptype === 'variable'){
-                channelDocFrag = getChannelDocFrag('channelSliderInputTemplate', channel, pin, ip, null);
+                channelDocFrag = getChannelDocFrag('channelSliderInputTemplate', node,channel, pin, ip, null);
             }
             nodeContainer.querySelector('.channelsContainer').appendChild(channelDocFrag, channel, null);
+        }
+
+        if (numberOfChannels == 0){
+            nodeContainer.querySelector('.channelsContainer').style.display = 'none';
         }
 
         nodesArea.appendChild(nodeContainer);
     }
 })
 
-var myModal = document.getElementById('myModal')
-var myInput = document.getElementById('myInput')
-
-// myModal.addEventListener('shown.bs.modal', function () {
-//   myInput.focus()
-// })
-
-var channelNumTracker = 0;
-
-$('#newnodemodal').on('hide.bs.modal', function () {
-    channelNumTracker = 0;
-    var chnform = document.getElementById("chnform");
-    chnform.innerHTML = "";
-    var errors = document.getElementsByClassName("formerror");
-    for (var i = 0; i < errors.length; ++i){
-        errors[i].innerHTML = "";
-    }
-})
-
-function addChannel(form){
-    channelNumTracker += 1;
-    var chnform = form.parentNode.getElementsByClassName("chnform")[0];
-    // new html for channel form,
-    // When i did this i didn't know about templates, so... yeah sorry
-    // TODO HERE: Replace this string with HTML template
-    var cfHtmlString = '<div><h5>New Channel ' + channelNumTracker.toString() + ' </h5> \
-    <label for="chn' + channelNumTracker.toString() + 'name">Channel Name:</label> <br> \
-    <input type="text" maxlength="20" id="chn' + channelNumTracker.toString() + 'name" name="chn' + channelNumTracker.toString() + 'name"> \
-    <p class="formerror" id="newnodeform_chn' + channelNumTracker.toString() + 'name_error"></p> \
-    <label for="chn' + channelNumTracker.toString() + 'inp">Channel Input Type: </label> \
-    <select id="chn' + channelNumTracker.toString() + 'inp" name="chn' + channelNumTracker.toString() + 'inp"> \
-        <option value="switch">Switch</option> \
-        <option value="variable">Slider</option> \
-    </select><br><br> \
-    <label for="chn' + channelNumTracker.toString() + 'pin">GPIO: </label> \
-    <select id="chn' + channelNumTracker.toString() + 'pin" name="chn' + channelNumTracker.toString() + 'pin"> \
-        <option value="0">0</option> \
-        <option value="1">1</option> \
-        <option value="2">2</option> \
-        <option value="3">3</option> \
-        <option value="4">4</option> \
-        <option value="5">5</option> \
-        <option value="9">9</option> \
-        <option value="10">10</option> \
-        <option value="12">12</option> \
-        <option value="13">13</option> \
-        <option value="14">14</option> \
-        <option value="15">15</option> \
-        <option value="16">16</option> \
-    </select><br><br> \
-    <label for="chn' + channelNumTracker.toString() + 'desc">Channel Description:</label> \
-    <input type="text" maxlength="200" id="chn' + channelNumTracker.toString() + 'desc" name="chn' + channelNumTracker.toString() + 'desc"><br><br></div>'
-    
-    var cfclone = htmlToElement(cfHtmlString);
-    document.getElementById("newnodeform_numberOfChn").value = channelNumTracker
-
-    chnform.appendChild(cfclone);
-
-}
-
-function removeChannel(){
-    var chnform = document.getElementById("chnform");
-    chnform.removeChild(chnform.lastChild);
-    channelNumTracker -= 1;
-    document.getElementById("newnodeform_numberOfChn").value = channelNumTracker
-}
-
-
-let activeform = document.forms["newnodeform"];
-
 // NOTE: browser automatically escape "\" so thats cool
 function validateNewNodeForm(){
+    let newnodeform = document.forms["newnodeform"];
     var formerrorsSelector = newnodeform.getElementsByClassName("formerror");
 
     for (var i = 0 ; i < formerrorsSelector.length; i++){
@@ -170,29 +111,11 @@ function validateNewNodeForm(){
         document.getElementById("newnodeform_nodeip_error").innerHTML = "Invalid IPv4 address";
         console.log("penis")
         containError = true;
-    }
-
-    
+    }    
 
     // validate nodename and ip is unique 
     nodename = newnodeform['nodename'].value;
     nodeip = newnodeform['nodeip'].value;
-
-    // For use with new channel form not new node form, don't send yet
-    chnnames = [];
-
-    var numberOfChn = parseInt(newnodeform['numberOfChn'].value);
-    if (numberOfChn != 0){
-        for(var i = 1; i <= numberOfChn; i++){
-            var name = newnodeform['chn' + i.toString() + 'name'].value;
-            if (chnnames.indexOf(name) == -1){
-                chnnames.push(name);
-            } else {
-                document.getElementById('newnodeform_chn' + i.toString() + 'name_error').innerHTML = "Duplicate name, ensure channel name is <b>unique</b>";
-                containError = true;
-            }
-        }
-    }
 
     if (containError == false){
         socketio.emit('vldnodeform', {nodename, nodeip})        
@@ -201,6 +124,7 @@ function validateNewNodeForm(){
 }
 
 socketio.on('newNodeFormError', function(errors){
+    let newnodeform = document.forms["newnodeform"];
     console.log(errors);
     console.log('I hate life');
     socketio.emit('debug', errors.length);
@@ -221,6 +145,44 @@ socketio.on('newNodeFormError', function(errors){
 
 if ( window.history.replaceState ) {
     window.history.replaceState( null, null, window.location.href );
+}
+
+
+
+function appendChannel(a){
+    var modalDOM = document.getElementById("appendChannelModal");
+    var modal = new bootstrap.Modal(modalDOM);
+    var formDOM = document.forms['appendChannelForm'];
+    formDOM['parent'].value = a.parentNode.dataset.node;
+    modal.show();
+
+}
+
+function validateNewChannel(){
+    var modalDOM = document.forms["appendChannelForm"];
+    chnname = modalDOM['chnname'].value;
+    parent = modalDOM['parent'].value
+    if (chnname.length > 0){
+        socketio.emit('validateNewChannel', {parent, chnname});
+    } else {
+        var errorContainer = document.getElementById('appendChannelForm_chnname_error');
+        errorContainer.innerHTML = "Please enter a name";
+    } 
+}
+
+socketio.on('newChannelError', function(duplicated){
+    if (duplicated){
+        var errorContainer = document.getElementById('appendChannelForm_chnname_error');
+        errorContainer.innerHTML = "Name not available, please try another name";
+    } else {
+        var modalDOM = document.forms["appendChannelForm"];
+        modalDOM.submit()
+    }
+})
+
+function deleteComponent(node, channel, type){
+    socketio.emit('deleteComponent', {node, channel, type});
+    location.reload();
 }
  
 function handleInput(input){
@@ -252,11 +214,6 @@ function handleInput(input){
         socketio.emit('input', {ip, type, pin, value})
     }
 }
-
-function scanIP(){
-    socketio.emit('scanIP', "")
-}
-
 
 // Dropdown menu when for 3 vertical dot menu, this one is for the node menu
 

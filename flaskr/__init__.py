@@ -60,7 +60,13 @@ class ConnectionHanlder:
         udp_thread = threading.Thread(target=self.__udp_broadcast)
         udp_thread.start()
         
-        
+def getNodeID(nodename):
+    dbcur.execute(f"SELECT * FROM Nodes WHERE name='{nodename}'")
+    try:
+        nodeid = dbcur.fetchone()[0]
+        return nodeid;        
+    except TypeError:
+        print(f'[DELETE] Channel {nodename} contains no channels')
 
 def get_html(relative_file_path):
     file = open(os.path.join(CWD, relative_file_path), "r")
@@ -156,27 +162,33 @@ def validatenodename(data):
     if dbcur.fetchone()[0] > 0:
         print('[ERROR] Duplicate Node Name')
         errors.append('nodename')
-
-    # for use with new channels not for new node
-    # for chnname in data['chnnames']:
-    #     dbcur.execute(f"SELECT COUNT(name) FROM Channels WHERE name='{chnname}' ")
-    #     if dbcur.fetchone()[0] > 0:
-    #         print('[ERROR] Duplicate Channel Name')
-    #         errors.append('chn' + str(data['chnnames'].index(chnname) + 1) + 'name')
     emit('newNodeFormError', errors, broadcast=False)
+
+@socketio.on('validateNewChannel')
+def validateNewChannel(data):
+    duplicated = False
+    dbcur.execute(f"SELECT COUNT(name) FROM Channels WHERE name='{data['chnname']}' AND node_id = {getNodeID(data['parent'])}")
+    if dbcur.fetchone()[0] > 0:
+        print('[ERROR] DUPLICATED NODE')
+        duplicated = True
+    emit('newChannelError', duplicated)
+
+@socketio.on('deleteComponent')
+def deleteComponent(data):
+    print(data)
+    if (data['type'] == 'node'):
+        dbcur.execute(f"DELETE FROM Channels WHERE node_id='{getNodeID(data['node'])}'")
+        dbcur.execute(f"DELETE FROM Nodes WHERE name='{data['node']}' ")
+        con.commit()
+    elif (data['type'] == 'channel'):
+        dbcur.execute(f"DELETE FROM Channels WHERE name='{data['channel']}' AND node_id = '{getNodeID(data['node'])}'")
+        con.commit()
 
 @socketio.on('input')
 def handleInput(data):
     # print('Input data: ', end='')
     # print(data)
     connection_handler.send_cmd(data["ip"],data["type"], data["pin"], data['value'])
-    
-
-
-@socketio.on('scanIP')
-def scanIP():
-    pass
-    
 
 @app.route('/')
 def landing():
@@ -195,25 +207,14 @@ def home():
             nodename = form['nodename']
             if form['nodename'] == '':
                 nodename = form['nodeip']
-
             dbcur.execute(f"INSERT INTO Nodes(ip, name, desc) VALUES ( '{form['nodeip']}','{nodename}','{form['nodedesc']}')")
-            # con.commit()
-            dbcur.execute(f"SELECT * FROM Nodes WHERE name='{nodename}'")
-            node_id = dbcur.fetchone()[0]
-
-            numberOfChn = int(form['numberOfChn'])
-
-            for i in range(1,numberOfChn+1):
-                chnname = form['chn' + str(i) + 'name']
-                if chnname == '':
-                    chnname = form['chn' + str(i) + 'pin']
-                dbcur.execute(f"INSERT INTO Channels(name, input, pin, desc, node_id) VALUES ( '{form['chn' + str(i) + 'name']}', '{form['chn' + str(i) + 'inp']}' , '{form['chn' + str(i) + 'pin']}' , '{form['chn' + str(i) + 'desc']}', '{int(node_id)}')")
-            
             con.commit()
 
             return render_template("main.html") 
-
+        elif form['formtype'] == 'appendChannelForm':
+            dbcur.execute(f"INSERT INTO Channels(name, input, pin, desc, node_id) VALUES ( '{form['chnname']}', '{form['chninp']}' , '{form['chnpin']}' , '{form['chndesc']}', '{getNodeID(form['parent'])}')")
             
+            con.commit()
     return render_template("main.html") 
 
 

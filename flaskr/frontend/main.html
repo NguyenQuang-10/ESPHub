@@ -52,7 +52,7 @@
                             <div class="dropdown-content">
                                 <a onclick="appendChannel(this)"><i class="bi bi-plus-square"></i> Add channel</a>
                                 <a onclick="changeNodeSetting(this)"><i class="bi bi-gear"></i> Node Settings</a>
-                                <a onclick="deleteNode(this)"><i class="bi bi-trash"></i> Delete Node</a>
+                                <a onclick="deleteComponent(this.parentNode.dataset.node, '','node')"><i class="bi bi-trash"></i> Delete Node</a>
                         </div></div>
                     </div>
                     <div class='contentBody'>
@@ -77,8 +77,17 @@
                     </div>
                 
                     
-                    <div><i class="bi bi-question-circle"></i></div>
-                    <div><i class="bi bi-three-dots-vertical"></i></div>
+                    <div class="channelIcons">
+                        <i class="bi bi-question-circle"></i>
+
+                        <div class="dropdownMenu">
+                            <i onclick="displayMenu(this)" class="bi bi-three-dots-vertical vdm"></i><br>
+                            <div class="dropdown-content" style="display: none;">
+                                <a onclick="changeChannelSetting(this)"><i class="bi bi-gear"></i> Channel Settings</a>
+                                <a onclick="deleteComponent(this.parentNode.dataset.node, this.parentNode.dataset.channel, 'channel')"><i class="bi bi-trash"></i> Delete Channel</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </template>
 
@@ -101,7 +110,7 @@
                             <i onclick="displayMenu(this)" class="bi bi-three-dots-vertical vdm"></i><br>
                             <div class="dropdown-content" style="display: none;">
                                 <a onclick="changeChannelSetting(this)"><i class="bi bi-gear"></i> Channel Settings</a>
-                                <a onclick="deleteChannel(this)"><i class="bi bi-trash"></i> Delete Channel</a>
+                                <a onclick="deleteComponent(this.parentNode.dataset.node, this.parentNode.dataset.channel, 'channel')"><i class="bi bi-trash"></i> Delete Channel</a>
                             </div>
                         </div>
                     </div>
@@ -133,7 +142,6 @@
                     <div class="modal-body">
                             <fieldset name='metadata'>
                                 <input type="hidden" name="formtype" value="newnodeform">
-                                <input type="hidden" name="numberOfChn" id="newnodeform_numberOfChn" value="0">
                             </fieldset>
                             <label for="nodeip">IP Address:</label> <br>
                             <input name="nodeip" id="nodeip" required>
@@ -143,9 +151,9 @@
                             <p class='formerror' id="newnodeform_nodename_error"></p>
                             <label for="nodedesc">Description:</label> <br>
                             <input maxlength="200" type="text" name="nodedesc"><br><br>
-                            <div class="chnform"></div>
+                            <!-- <div class="chnform"></div>
                             <a href="javascript:void(0)" onclick="addChannel(this)" id="addChnBtn">Add channel</a>
-                            <a href="javascript:void(0)" onclick="removeChannel()" id="rmChbBtn" style="float: right;">Remove channel</a>
+                            <a href="javascript:void(0)" onclick="removeChannel()" id="rmChbBtn" style="float: right;">Remove channel</a> -->
                         
                     </div>
                     <div class="modal-footer" id="nodemodalfooter">
@@ -158,24 +166,52 @@
         </form>
     </div>
 
-    <div class="modal fade" id="appendChannelModal" tabindex="-1" aria-hidden="true">
-        <form method='POST' onsubmit="validateNewNodeForm()" id="appendChannelForm">
-            <div class="modal-dialog modal-dialog-scrollable nodemodal">
+    <div class="modal fade" id="appendChannelModal" aria-hidden="true">
+        <form method='POST' id="appendChannelForm">
+            <div class="modal-dialog modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Add Channel</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" >New Channel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" data-bs-target="#appendChannelModal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-
-                            <div class="chnform"></div>
-                            <a href="javascript:void(0)" onclick="addChannel(this)" id="addChnBtn">Add channel</a>
-                            <a href="javascript:void(0)" onclick="removeChannel()" id="rmChbBtn" style="float: right;">Remove channel</a>
-                        
+                        <fieldset name='metadata'>
+                            <input type="hidden" name="formtype" value="appendChannelForm">
+                            <input type="hidden" name="parent" value="">
+                        </fieldset>
+                        <div>
+                            <label for="chnname">Channel Name:</label> <br> 
+                            <input type="text" maxlength="20" id="chnname" name="chnname" required>  
+                            <p class="formerror" id="appendChannelForm_chnname_error"></p> 
+                            <label for="chninp">Channel Input Type: </label> 
+                            <select id="chninp" name="chninp"> 
+                                <option value="switch">Switch</option> 
+                                <option value="variable">Slider</option> 
+                            </select><br><br> 
+                            <label for="chnpin">GPIO: </label> 
+                            <select id="chnpin" name="chnpin"> 
+                                <option value="0">0</option> 
+                                <option value="1">1</option> 
+                                <option value="2">2</option> 
+                                <option value="3">3</option> 
+                                <option value="4">4</option> 
+                                <option value="5">5</option> 
+                                <option value="9">9</option> 
+                                <option value="10">10</option> 
+                                <option value="12">12</option> 
+                                <option value="13">13</option> 
+                                <option value="14">14</option> 
+                                <option value="15">15</option> 
+                                <option value="16">16</option>
+                                <option value="None">None</option>  
+                            </select><br><br>
+                            <label for="chn' + channelNumTracker.toString() + 'desc">Channel Description:</label><br>
+                            <input type="text" maxlength="200" id="chndesc" name="chndesc"><br><br> 
+                        </div>
                     </div>
                     <div class="modal-footer" id="nodemodalfooter">
                         <button type="button" class='btn me-auto' data-bs-dismiss="modal">Close</button>
-                        <button type='button' class='btn' onclick="validateNewNodeForm()">Submit</button>
+                        <button type='button' class='btn' onclick="validateNewChannel()">Submit</button>
                     </div>
                 </div>
             </div>

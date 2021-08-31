@@ -2,15 +2,24 @@
 MVP:
 Convert node and channel container into template - done
 Implement container generation for node (done) and channels (done)
-send data when input change (semi-done)
-Implement connect to node on startup, check state of nodes to initilize state of input correctly
-Implement data communication protocol
+send data when input change (done)
+Implement data communication protocol (done)
+Monitor value from node
+Modify node and channel (only settings left)
+Append channel:
+    - finish the form:
+        + metadata: when press button, trigger js function, show the modal then modify the metadata field (done)
+        + validate no name stuff (done)
+        + remove adding channel when creating nodes (done)
+        NOTE: now only allow create 1 channel at a time
+
+Display log 
+Node state/ connected /disconnected
+Fetch pin state everynow and then
 Help, tips
 
-Other goodies:
-description functionality
-display connection type
-display
-Connection state of each node
-Modify node and channel info
+ESP:
+Trim message (done)
+parse message (put char to string buffer) (done)
+
 
