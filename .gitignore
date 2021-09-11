@@ -7,6 +7,6 @@ share
 data.db
 instance
 *.pyc
-flaskr/__pycache__/
+ESPHub/__pycache__/
 experimentfiles
 

@@ -13,13 +13,22 @@ Append channel:
         + remove adding channel when creating nodes (done)
         NOTE: now only allow create 1 channel at a time
 
-Display log 
-Node state/ connected /disconnected
-Fetch pin state everynow and then
+Display log - done
+Node state/ connected /disconnected - done
+Fetch pin state everynow and then - done
+
+Monitor channels:
+- decorator
+- rework the sending method
+- front end form
+- esp8266 firmware
+
 Help, tips
 
 ESP:
 Trim message (done)
 parse message (put char to string buffer) (done)
+
+Monitor channels:
 
 

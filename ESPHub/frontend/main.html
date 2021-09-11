@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Điều khiển bể cá</title>
+    <title>ESPHub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/dropdownmenu.css">
     <link rel="stylesheet" href="/static/slider.css">
@@ -18,7 +18,7 @@
     <!-- top tab -->
     <div class="container-fluid" id="toptab">
         <div class="row justify-content-between">
-            <div class="col-6" id="logo"> <div>SimpleCP <span style="color: white;">Configurator</span></div> </div>
+            <div class="col-6" id="logo"> <div>ESPHub <span style="color: white;">Configurator</span></div> </div>
             <div class="col-6" id="hostinfo">
                 <div>Hostname: <span id="hostname">fetching</span></div>
                 <div>Host IP: <span id="hostIP">fetching</span></div>
@@ -26,6 +26,9 @@
         </div>
     </div>
     <!-- end top tab -->
+
+    <div id="logContainer">
+    </div>
 
     <!-- sidebar and content page -->
     <div id="undertab">
@@ -44,8 +47,17 @@
             <template id='nodeContainerTemplate'>
                 <div class='contentContainer'>                
                     <div class='contentTitlecard'>
-                        <span class="nodeTitleAndIp"><span class='nodetitle'>bruh</span><span class='nodecontainerip'>very very small text</span></span>
+                        <span class="nodeInfoCluster">
+                        
+                        <svg xmlns="http://www.w3.org/2000/svg" id="connectionStateIcon" width="16" height="16" fill="red" class="bi bi-circle-fill" viewBox="0 0 16 16" style="margin-right: 0.5em;">
+                            <circle cx="8" cy="8" r="8"/>
+                        </svg>
 
+                        <span class='nodetitle'>bruh</span>
+                        <span class='nodecontainerip'>very very small text</span>
+
+                    </span>
+                        
                         <!-- <link rel="stylesheet" href="/static/dropdownmenu.css"> -->
 
                         <div class="dropdownMenu"><i onclick="displayMenu(this)" class="bi bi-three-dots-vertical vdm"></i>
@@ -78,7 +90,9 @@
                 
                     
                     <div class="channelIcons">
-                        <i class="bi bi-question-circle"></i>
+                        <a class="descIcon" tabindex="0" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-placement="left" data-bs-title="Channel Description" data-bs-content="None">
+                            <i class="bi bi-question-circle"></i>
+                        </a>
 
                         <div class="dropdownMenu">
                             <i onclick="displayMenu(this)" class="bi bi-three-dots-vertical vdm"></i><br>
@@ -104,7 +118,9 @@
                     </div>
                     
                     <div class="channelIcons">
-                        <i class="bi bi-question-circle"></i>
+                        <a class="descIcon" tabindex="0" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-placement="left" data-bs-title="Channel Description" data-bs-content="None">
+                            <i class="bi bi-question-circle"></i>
+                        </a>
 
                         <div class="dropdownMenu">
                             <i onclick="displayMenu(this)" class="bi bi-three-dots-vertical vdm"></i><br>
@@ -131,17 +147,17 @@
     <!-- end content and sidebar area -->
 
     <!-- Modal -->
-    <div class="modal fade" id="newnodemodal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <form method='POST' onsubmit="validateNewNodeForm()" id="newnodeform">
+    <div class="modal fade" id="newnodemodal" tabindex="-1" aria-hidden="true">
+        <form method='POST' id="newnodeform" autocomplete="off">
             <div class="modal-dialog modal-dialog-scrollable nodemodal">
                 <div class="modal-content">
                     <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Node Settings</h5>
+                    <h5 class="modal-title">Node Settings</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                             <fieldset name='metadata'>
-                                <input type="hidden" name="formtype" value="newnodeform">
+                                <input autocomplete="off" type="hidden" name="formtype" value="newnodeform">
                             </fieldset>
                             <label for="nodeip">IP Address:</label> <br>
                             <input name="nodeip" id="nodeip" required>
@@ -158,7 +174,43 @@
                     </div>
                     <div class="modal-footer" id="nodemodalfooter">
                         <button type="button" class='btn me-auto' data-bs-dismiss="modal">Close</button>
-                        <button type='button' class='btn' onclick="validateNewNodeForm()">Submit</button>
+                        <button type='button' class='btn' onclick="validateNodeForm('newnodeform')">Submit</button>
+                    </div>
+                </div>
+            </div>
+            
+        </form>
+    </div>
+
+    <div class="modal fade" id="modifynodemodal" tabindex="-1" aria-hidden="true">
+        <form method='POST' id="modifyNodeForm" autocomplete="off">
+            <div class="modal-dialog modal-dialog-scrollable nodemodal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Node Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                            <fieldset name='metadata'>
+                                <input autocomplete="off" type="hidden" name="formtype" value="modifynodeform">
+                                <input type="hidden" name="ogname" value="">
+                            </fieldset>
+                            <label for="nodeip">IP Address:</label> <br>
+                            <input name="nodeip" required>
+                            <p class='formerror' id="modifyNodeForm_nodeip_error"></p>
+                            <label for="nodedesc">Node Name:</label> <br>
+                            <input maxlength="20" type="text" name="nodename">
+                            <p class='formerror' id="modifyNodeForm_nodename_error"></p>
+                            <label for="nodedesc">Description:</label> <br>
+                            <input maxlength="200" type="text" name="nodedesc"><br><br>
+                            <!-- <div class="chnform"></div>
+                            <a href="javascript:void(0)" onclick="addChannel(this)" id="addChnBtn">Add channel</a>
+                            <a href="javascript:void(0)" onclick="removeChannel()" id="rmChbBtn" style="float: right;">Remove channel</a> -->
+                        
+                    </div>
+                    <div class="modal-footer" id="nodemodalfooter">
+                        <button type="button" class='btn me-auto' data-bs-dismiss="modal">Close</button>
+                        <button type='button' class='btn' onclick="validateNodeForm('modifyNodeForm')">Submit</button>
                     </div>
                 </div>
             </div>
@@ -167,7 +219,7 @@
     </div>
 
     <div class="modal fade" id="appendChannelModal" aria-hidden="true">
-        <form method='POST' id="appendChannelForm">
+        <form method='POST' id="appendChannelForm" autocomplete="off">
             <div class="modal-dialog modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -176,7 +228,7 @@
                     </div>
                     <div class="modal-body">
                         <fieldset name='metadata'>
-                            <input type="hidden" name="formtype" value="appendChannelForm">
+                            <input autocomplete="off" type="hidden" name="formtype" value="appendChannelForm">
                             <input type="hidden" name="parent" value="">
                         </fieldset>
                         <div>
@@ -203,15 +255,69 @@
                                 <option value="14">14</option> 
                                 <option value="15">15</option> 
                                 <option value="16">16</option>
-                                <option value="None">None</option>  
+                                <option value="Custom">Custom</option>  
                             </select><br><br>
-                            <label for="chn' + channelNumTracker.toString() + 'desc">Channel Description:</label><br>
+                            <label for="chndesc">Channel Description:</label><br>
                             <input type="text" maxlength="200" id="chndesc" name="chndesc"><br><br> 
                         </div>
                     </div>
                     <div class="modal-footer" id="nodemodalfooter">
                         <button type="button" class='btn me-auto' data-bs-dismiss="modal">Close</button>
-                        <button type='button' class='btn' onclick="validateNewChannel()">Submit</button>
+                        <button type='button' class='btn' onclick="validateNewChannel('appendChannelForm')">Submit</button>
+                    </div>
+                </div>
+            </div>
+            
+        </form>
+    </div>
+
+    <div class="modal fade" id="modifyChannelModal" aria-hidden="true">
+        <form method='POST' id="modifyChannelForm" autocomplete="off">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h5 class="modal-title" >Channel Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" data-bs-target="#modalChannelModal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <fieldset name='metadata'>
+                            <input autocomplete="off" type="hidden" name="formtype" value="modifyChannelForm">
+                            <input type="hidden" name="parent" value="">
+                            <input type="hidden" name="ogname" value="">
+                        </fieldset>
+                        <div>
+                            <label for="chnname">Channel Name:</label> <br> 
+                            <input type="text" maxlength="20" name="chnname" required>  
+                            <p class="formerror" id="modifyChannelForm_chnname_error"></p> 
+                            <label for="chninp">Channel Input Type: </label> 
+                            <select name="chninp"> 
+                                <option value="switch">Switch</option> 
+                                <option value="variable">Slider</option> 
+                            </select><br><br> 
+                            <label for="chnpin">GPIO: </label> 
+                            <select name="chnpin"> 
+                                <option value="0">0</option> 
+                                <option value="1">1</option> 
+                                <option value="2">2</option> 
+                                <option value="3">3</option> 
+                                <option value="4">4</option> 
+                                <option value="5">5</option> 
+                                <option value="9">9</option> 
+                                <option value="10">10</option> 
+                                <option value="12">12</option> 
+                                <option value="13">13</option> 
+                                <option value="14">14</option> 
+                                <option value="15">15</option> 
+                                <option value="16">16</option>
+                                <option value="Custom">Custom</option>  
+                            </select><br><br>
+                            <label for="chndesc">Channel Description:</label><br>
+                            <input type="text" maxlength="200" name="chndesc"><br><br> 
+                        </div>
+                    </div>
+                    <div class="modal-footer" id="nodemodalfooter">
+                        <button type="button" class='btn me-auto' data-bs-dismiss="modal">Close</button>
+                        <button type='button' class='btn' onclick="validateNewChannel('modifyChannelForm')">Submit</button>
                     </div>
                 </div>
             </div>
@@ -220,6 +326,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
 </body>
 
 </html>
