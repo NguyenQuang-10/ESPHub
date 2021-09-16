@@ -122,7 +122,7 @@ socketio.on("init", function(nodejson){
         var conn = nodejson['nodes'][node]['conn'];
         var stateIcon = nodeContainer.querySelector('#connectionStateIcon');
         if (conn === 'connected'){
-            console.log(stateIcon)
+            // console.log(stateIcon)
             stateIcon.setAttribute("fill", 'green');
         } else if (conn === 'disconnected'){
             stateIcon.setAttribute("fill", 'red');
@@ -135,18 +135,22 @@ socketio.on("init", function(nodejson){
         for (const channel in nodejson['nodes'][node]['channels']){
             numberOfChannels++;
             var channelJSON = nodejson['nodes'][node]['channels'][channel];
-            var inptype = channelJSON['inp'];
+            var type = channelJSON['type'];
             var pin = channelJSON['pin']
             var channelDocFrag;
-            if (inptype === 'switch'){
+
+            if (type === 'switch'){
                 channelDocFrag = getChannelDocFrag('channelSwitchInputTemplate', node, channel, pin, ip, channelJSON['desc']);
                 if (channelJSON['value'] > 0){
                     channelDocFrag.querySelector('input').checked = true;
                 }
-            } else if (inptype === 'variable'){
+            } else if (type === 'variable'){
                 channelDocFrag = getChannelDocFrag('channelSliderInputTemplate', node,channel, pin, ip, channelJSON['desc']);
                 channelDocFrag.querySelector('input').value = channelJSON['value'];
+            } else if (type === 'display'){
+                channelDocFrag = getChannelDocFrag('channelDisplayTemplate', node, channel, pin, ip, channelJSON['desc']);
             }
+
             nodeContainer.querySelector('.channelsContainer').appendChild(channelDocFrag);
         }
 
@@ -156,9 +160,12 @@ socketio.on("init", function(nodejson){
 
         nodesArea.appendChild(nodeContainer);
     }
-
-    enablePopover();
-    dismissPopover();
+    try {
+        enablePopover();
+        dismissPopover();
+    } catch(err) {
+        console.log(err);
+    }
     
 })
 
@@ -276,6 +283,21 @@ socketio.on('newNodeFormError', function(data){
     }
 })
 
+socketio.on("updateDisplayChannel", function(data){
+    // console.log(data);
+    // [0] is ip of node
+    // [1] is channel name
+    // [2] is value
+    var node = ip_node_map.get(data[0]);
+    console.log(node);
+    var display = document.getElementById(node + "_" + data[1]);
+    // display.value = data[2];
+    if (display != null){
+        display.value = data[2];
+    }
+
+})
+
 if ( window.history.replaceState ) {
     window.history.replaceState( null, null, window.location.href );
 }
@@ -287,6 +309,14 @@ function appendChannel(a){
     var modal = new bootstrap.Modal(modalDOM);
     var formDOM = document.forms['appendChannelForm'];
     formDOM['parent'].value = a.parentNode.dataset.node;
+    formDOM['chntype'].onchange = function(){
+        if (formDOM['chntype'].value === "display"){
+            formDOM['chnpin'].value = 'Custom';
+            formDOM['chnpin'].disabled = true;
+        } else {
+            formDOM['chnpin'].disabled = false;
+        }
+    }
     modal.show();
 
 }
@@ -317,10 +347,24 @@ function changeChannelSetting(a){
     formDOM['parent'].value = parent;
     formDOM['ogname'].value = name;
     formDOM['chnname'].value = name;
-    formDOM['chninp'].value =[name]['inp'];
-    formDOM['chninp'].value = chninfo[name]['inp'];
+    // formDOM['chninp'].value =[name]['inp'];
+    formDOM['chntype'].value = chninfo[name]['inp'];
     formDOM['chnpin'].value = chninfo[name]['pin'];
     formDOM['chndesc'].value = chninfo[name]['desc'];
+
+    if (formDOM['chntype'].value === "display"){
+        formDOM['chnpin'].value = 'Custom';
+        formDOM['chnpin'].disabled = true;
+    }
+
+    formDOM['chntype'].onchange = function(){
+        if (formDOM['chntype'].value === "display"){
+            formDOM['chnpin'].value = 'Custom';
+            formDOM['chnpin'].disabled = true;
+        } else {
+            formDOM['chnpin'].disabled = false;
+        }
+    }
     modal.show();
 }
 
@@ -338,6 +382,7 @@ function validateNewChannel(formid){
 
 socketio.on('newChannelError', function(data){
     var form = document.forms[data[0]];
+    form['chnpin'].disabled = false;
     if (data[1]){
         if (data[0] === "appendChannelForm"){
 
@@ -356,6 +401,7 @@ socketio.on('newChannelError', function(data){
         }
         
     } else {
+        
         form.submit()
     }
 })
@@ -380,7 +426,7 @@ function handleInput(input){
         } else {
             value = 0
         }
-        socketio.emit('input', {ip, type, pin, value})
+        socketio.emit('input', {ip, chnname, type, pin, value})
         // if (input.checked) {
         //     // console.log("The switch is on");
             
@@ -391,7 +437,7 @@ function handleInput(input){
         // console.log(input.value);
         var value = input.value;
         type="pwm";
-        socketio.emit('input', {ip, type, pin, value})
+        socketio.emit('input', {ip, chnname, type, pin, value})
     }
 }
 

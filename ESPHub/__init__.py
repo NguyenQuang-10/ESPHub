@@ -15,22 +15,59 @@ eventlet.monkey_patch()
 
 CWD = os.path.abspath(os.path.dirname(__file__))
 
+
 con = sqlite3.connect("data.db")
 dbcur = con.cursor()
 
+try:
+    dbcur.execute("SELECT * FROM Nodes")
+except sqlite3.OperationalError:
+    dbcur.execute(""" CREATE TABLE Nodes (
+    id integer PRIMARY KEY AUTOINCREMENT,
+    ip text UNIQUE,
+    name text UNIQUE,
+    desc text
+    )""")
+
+    dbcur.execute("""CREATE TABLE Channels (
+        id integer PRIMARY KEY AUTOINCREMENT,
+        name text,
+        type text,
+        pin text,
+        desc text,
+        node_id integer
+    ) """)
+
 class ESPHub:
+
+    DIGITAL = "DIG"
+    ANALOG = "PWM"
+    CUSTOM = "CST"
+
     def __init__(self,socketio, app):
         self.ws = socketio
         # socketio require app for context stuff
         self.app = app
         self.__tcpserver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         # Let user decide port from a config file later
         self.__tcpserver.bind(("0.0.0.0", 5501))
-        self.__udpserver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.__udpserver.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        # self.__udpserver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # self.__udpserver.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+        # map ip address string to socket file descriptor
         self.tcp_ip_conn_table = {}
 
+        # map channel name to function that run on user input
+        self.cst_chn_inp_func_table = {}
+
+        # map channel name to function that run on receiving custom channel form ESP8266
+        self.cst_chn_recv_func_table = {}
+
         self.pin_state = {}
+
+    def updateDisplayChannel(self, ip, channel,value):
+        self.ws.emit("updateDisplayChannel", [ip, channel, value])
 
     def __tcp_listen(self):
         self.__tcpserver.listen()
@@ -58,20 +95,32 @@ class ESPHub:
 
     def __recv_from_node(self,ip):
         conn = self.tcp_ip_conn_table[ip]
-        conn.settimeout(2)
+        conn.settimeout(3)
         while True:
             try:
                 conn.send(self.__pad_msg("PING\n".encode('ascii')))
                 msg = conn.recv(64)
                 msg_parse = msg.strip().decode('ascii').split('\n')
 
+                # print(msg_parse)
+
                 # [0] is the identifier, the rest is the pin value array
                 if (msg_parse[0] == "PST"):
-                    self.pin_state[ip] = {}
+                    if ip not in self.pin_state:
+                        self.pin_state[ip] = {}
                     pins = [0,1,2,3,4,5,9,10,12,13,14,15,16]
                     for pin in pins:
                         self.pin_state[ip][pin] = msg_parse[pin + 1]
                     self.ws.emit("updconst", ["connected", ip, self.pin_state[ip] ])
+                elif (msg_parse[0] == "CST"):
+                    # [1] channel name
+                    # [2] value
+                    chnname = msg_parse[1]
+                    value = msg_parse[2]
+                    if chnname in self.cst_chn_recv_func_table:
+                        self.cst_chn_recv_func_table[chnname]({'ip': ip,'value': value})
+                    else:
+                        self.updateDisplayChannel(ip, chnname, value)
             except socket.timeout:
                 self.tcp_ip_conn_table.pop(ip)
                 self.ws.emit("updconst", ["disconnected", ip])
@@ -81,12 +130,29 @@ class ESPHub:
 
 
     # Message size always smaller than 64 bytes
-    def send_cmd(self, ip, inptype, pin, value):
-        if pin != 'Custom':
-            msg = "CMD" + "\n" + inptype + "\n" + str(pin) + "\n" + str(value) + "\n"
-            self.__send_to_node(ip, msg)
-        # else if pin == 'Custom':
-
+    # ip : ip address of recipient
+    # chnname : the name of the channel that the data is sent under
+    # inptype: 
+    #       ESPHub.DIGITAL : value is 0 or 1 (on or off)
+    #       ESPHub.ANALOG : value is between 0 to 255
+    #       ESPHub.CUSTOM: data is processed by custom code on recipient
+    # pin: GPIO pin to be affected on ESP8266, only useful if using inptype of DIGITAL or CUSTOM, if using CUSTOM let it be none
+    # value: the value to be sent
+    def send_cmd(self, ip, chnname, inptype, pin, value):
+        if ip in self.tcp_ip_conn_table:
+            if pin != 'Custom':
+                msg = "CMD" + "\n" + inptype + "\n" + str(pin) + "\n" + str(value) + "\n"
+                self.__send_to_node(ip, msg)
+            elif pin == 'Custom':
+                # print(chnname)
+                if chnname not in self.cst_chn_func_table:
+                    msg = "CMD" + "\n" + "CST" + "\n" + chnname + "\n" + str(value) + "\n"
+                    self.__send_to_node(ip, msg)
+                else:
+                    self.cst_chn_func_table[chnname]({"ip": ip, "inptype": inptype ,"value": value})
+        else:
+            raise f"[DISCONNECTED] Node {ip} is disconnected, can't send instruction"
+            emit('log', [f"[ERROR] Node with IP:{data['ip']} is not connected", "error"])
         
 
     def __get_pin_state(self, ip):
@@ -95,11 +161,38 @@ class ESPHub:
         recvThread = threading.Thread(target=self.__recv_from_node, args=(ip,))
         recvThread.start()
 
-        
+    # Flask style decorator, route custom channel name input to function to run
+    def onCustomChannelInput(self, chnname):
+        """
+        @esphub.onCustomChannelInput("chnname")
+        def foo(arg): // arg is MANDATORY, arg is a dictionary containing info
+
+        note:
+        don't return anything 
+        """
+        def decorator(f):
+            self.cst_chn_inp_func_table[chnname] = f
+        return decorator
+
+    # runs the decorated function when a custom channel is recieved from node (ESP8266)
+    def onCustomChannelRecv(self, chnname):
+        """
+        @esphub.onCustomChannelRecv("chnname")
+        def foo(arg): // arg is MANDATORY, arg is a dictionary containing info
+
+        note:
+        don't return anything 
+        """
+        def decorator(f):
+            self.cst_chn_recv_func_table[chnname] = f
+        return decorator
+
+    # start tcp server socket so the ESP8266 Nodes can connect
     def open_tcp(self):
         listen_thread = threading.Thread(target=self.__tcp_listen)
         listen_thread.start()
 
+    # open flask server and tcp server
     def run(self):
         self.open_tcp()
         self.ws.run(self.app, host='0.0.0.0', debug=False)
@@ -163,10 +256,17 @@ def getNodesInfo():
         nodejson['nodes'][nodename]['channels']= {}
         for chn in channels:
             channelValue = -1
+            # chn[3] is pin number, chn[1] is channel name, 2 is input type, 4 is channel description
             if connected:
-                channelValue = esphub.pin_state[nodeip][int(chn[3])]
+                if chn[3] == 'Custom':
+                    try:
+                        channelValue = esphub.pin_state[nodeip][chn[1]]
+                    except KeyError as err:
+                        print(err)
+                else:
+                    channelValue = esphub.pin_state[nodeip][int(chn[3])]
             nodejson['nodes'][nodename]['channels'][chn[1]] = {
-                'inp' : chn[2],
+                'type' : chn[2],
                 'pin' : chn[3],
                 'desc' : chn[4],
                 'value' : channelValue
@@ -225,7 +325,7 @@ def home():
 
             return render_template("main.html") 
         elif form['formtype'] == 'appendChannelForm':
-            dbcur.execute(f"INSERT INTO Channels(name, input, pin, desc, node_id) VALUES ( '{form['chnname']}', '{form['chninp']}' , '{form['chnpin']}' , '{form['chndesc']}', '{getNodeID(form['parent'])}')")
+            dbcur.execute(f"INSERT INTO Channels(name, type, pin, desc, node_id) VALUES ( '{form['chnname']}', '{form['chntype']}' , '{form['chnpin']}' , '{form['chndesc']}', '{getNodeID(form['parent'])}')")
             
             con.commit()
         
@@ -239,7 +339,7 @@ def home():
             con.commit()
         
         elif form['formtype'] == 'modifyChannelForm':
-            dbcur.execute(f"UPDATE Channels SET name='{form['chnname']}' ,input='{form['chninp']}' ,pin='{form['chnpin']}' ,desc='{form['chndesc']}' WHERE name='{form['ogname']}' AND node_id='{getNodeID(form['parent'])}'")
+            dbcur.execute(f"UPDATE Channels SET name='{form['chnname']}' ,type='{form['chntype']}' ,pin='{form['chnpin']}' ,desc='{form['chndesc']}' WHERE name='{form['ogname']}' AND node_id='{getNodeID(form['parent'])}'")
             con.commit()
 
     return render_template("main.html") 
@@ -296,9 +396,12 @@ def handleInput(data):
     print('Input data: ', end='')
     print(data)
     try:
-        esphub.send_cmd(data["ip"],data["type"], data["pin"], data['value'])
+        esphub.send_cmd(data["ip"], data["chnname"],data["type"].upper(), data["pin"], data['value'])
         # this won't get executed if node not connected because line above would fail first
-        esphub.pin_state[data["ip"]][int(data['pin'])] = data['value']
+        if data["pin"] == 'Custom':
+            esphub.pin_state[data["ip"]][data['chnname']] = data['value']
+        else:
+            esphub.pin_state[data["ip"]][int(data['pin'])] = data['value']
     except KeyError:
         emit('log', [f"[ERROR] Node with IP:{data['ip']} is not connected", "error"])
 

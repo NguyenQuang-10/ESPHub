@@ -235,7 +235,7 @@ a:hover{
     margin-top: 0.5em;
 }
 
-.channelInputLeftGroup {
+.channelInputGroup {
     width: 90%;
 }
 
@@ -245,4 +245,9 @@ a:hover{
 
 .channelIcons i {
     margin-left: 0.5em;
+}
+
+.displayChannelValue {
+    padding: 0.5em;
+    width: fit-content;
 }

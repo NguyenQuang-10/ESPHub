@@ -80,7 +80,7 @@
             <link rel="stylesheet" href="/static/toggleswitch.css">
             <template id='channelSwitchInputTemplate'>
                 <div class='channelInput'>
-                    <div class='channelInputLeftGroup'>
+                    <div class='channelInputGroup'>
                         <label class="switch">
                             <input type="checkbox" class='switchInput' onclick="handleInput(this)">
                             <span class="slider round"></span>
@@ -105,11 +105,34 @@
                 </div>
             </template>
 
+            <template id='channelDisplayTemplate'>
+                <div class='channelInput'>
+                    <div class='channelInputGroup'>
+                        <input class="displayChannelValue" value="N/A" disabled>
+                        <span class='channelLabel'>Name</span>
+                    </div>
+                
+                    
+                    <div class="channelIcons">
+                        <a class="descIcon" tabindex="0" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-placement="left" data-bs-title="Channel Description" data-bs-content="None">
+                            <i class="bi bi-question-circle"></i>
+                        </a>
+
+                        <div class="dropdownMenu">
+                            <i onclick="displayMenu(this)" class="bi bi-three-dots-vertical vdm"></i><br>
+                            <div class="dropdown-content" style="display: none;">
+                                <a onclick="changeChannelSetting(this)"><i class="bi bi-gear"></i> Channel Settings</a>
+                                <a onclick="deleteComponent(this.parentNode.dataset.node, this.parentNode.dataset.channel, 'channel')"><i class="bi bi-trash"></i> Delete Channel</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
            
             <template id='channelSliderInputTemplate'>
 
                 <div class='channelInput'>
-                    <div class='channelInputLeftGroup'>
+                    <div class='channelInputGroup'>
                         
                         <div class="slidecontainer">
                             <input type="range" min="0" max="255" value="50" class="variableInputSlider" oninput='handleInput(this)'>
@@ -231,35 +254,34 @@
                             <input autocomplete="off" type="hidden" name="formtype" value="appendChannelForm">
                             <input type="hidden" name="parent" value="">
                         </fieldset>
-                        <div>
-                            <label for="chnname">Channel Name:</label> <br> 
-                            <input type="text" maxlength="20" id="chnname" name="chnname" required>  
-                            <p class="formerror" id="appendChannelForm_chnname_error"></p> 
-                            <label for="chninp">Channel Input Type: </label> 
-                            <select id="chninp" name="chninp"> 
-                                <option value="switch">Switch</option> 
-                                <option value="variable">Slider</option> 
-                            </select><br><br> 
-                            <label for="chnpin">GPIO: </label> 
-                            <select id="chnpin" name="chnpin"> 
-                                <option value="0">0</option> 
-                                <option value="1">1</option> 
-                                <option value="2">2</option> 
-                                <option value="3">3</option> 
-                                <option value="4">4</option> 
-                                <option value="5">5</option> 
-                                <option value="9">9</option> 
-                                <option value="10">10</option> 
-                                <option value="12">12</option> 
-                                <option value="13">13</option> 
-                                <option value="14">14</option> 
-                                <option value="15">15</option> 
-                                <option value="16">16</option>
-                                <option value="Custom">Custom</option>  
-                            </select><br><br>
-                            <label for="chndesc">Channel Description:</label><br>
-                            <input type="text" maxlength="200" id="chndesc" name="chndesc"><br><br> 
-                        </div>
+                        <label for="chnname">Channel Name:</label> <br> 
+                        <input type="text" maxlength="20" id="chnname" name="chnname" required>  
+                        <p class="formerror" id="appendChannelForm_chnname_error"></p> 
+                        <label for="chntype">Channel Type: </label> 
+                        <select class="chntypeSelect" id="chntype" name="chntype"> 
+                            <option value="switch">Switch</option> 
+                            <option value="variable">Slider</option>
+                            <option value="display">Display</option> 
+                        </select><br><br> 
+                        <label for="chnpin">GPIO: </label> 
+                        <select id="chnpin" name="chnpin"> 
+                            <option value="0">0</option> 
+                            <option value="1">1</option> 
+                            <option value="2">2</option> 
+                            <option value="3">3</option> 
+                            <option value="4">4</option> 
+                            <option value="5">5</option> 
+                            <option value="9">9</option> 
+                            <option value="10">10</option> 
+                            <option value="12">12</option> 
+                            <option value="13">13</option> 
+                            <option value="14">14</option> 
+                            <option value="15">15</option> 
+                            <option value="16">16</option>
+                            <option value="Custom">Custom</option>  
+                        </select><br><br>
+                        <label for="chndesc">Channel Description:</label><br>
+                        <input type="text" maxlength="200" id="chndesc" name="chndesc"><br><br> 
                     </div>
                     <div class="modal-footer" id="nodemodalfooter">
                         <button type="button" class='btn me-auto' data-bs-dismiss="modal">Close</button>
@@ -285,35 +307,34 @@
                             <input type="hidden" name="parent" value="">
                             <input type="hidden" name="ogname" value="">
                         </fieldset>
-                        <div>
-                            <label for="chnname">Channel Name:</label> <br> 
-                            <input type="text" maxlength="20" name="chnname" required>  
-                            <p class="formerror" id="modifyChannelForm_chnname_error"></p> 
-                            <label for="chninp">Channel Input Type: </label> 
-                            <select name="chninp"> 
-                                <option value="switch">Switch</option> 
-                                <option value="variable">Slider</option> 
-                            </select><br><br> 
-                            <label for="chnpin">GPIO: </label> 
-                            <select name="chnpin"> 
-                                <option value="0">0</option> 
-                                <option value="1">1</option> 
-                                <option value="2">2</option> 
-                                <option value="3">3</option> 
-                                <option value="4">4</option> 
-                                <option value="5">5</option> 
-                                <option value="9">9</option> 
-                                <option value="10">10</option> 
-                                <option value="12">12</option> 
-                                <option value="13">13</option> 
-                                <option value="14">14</option> 
-                                <option value="15">15</option> 
-                                <option value="16">16</option>
-                                <option value="Custom">Custom</option>  
-                            </select><br><br>
-                            <label for="chndesc">Channel Description:</label><br>
-                            <input type="text" maxlength="200" name="chndesc"><br><br> 
-                        </div>
+                        <label for="chnname">Channel Name:</label> <br> 
+                        <input type="text" maxlength="20" name="chnname" required>  
+                        <p class="formerror" id="modifyChannelForm_chnname_error"></p> 
+                        <label for="chntype">Channel Type: </label> 
+                        <select class='chntypeSelect' name="chntype"> 
+                            <option value="switch">Switch</option> 
+                            <option value="variable">Slider</option> 
+                            <option value="display">Display</option>
+                        </select><br><br> 
+                        <label for="chnpin">GPIO: </label> 
+                        <select  name="chnpin"> 
+                            <option value="0">0</option> 
+                            <option value="1">1</option> 
+                            <option value="2">2</option> 
+                            <option value="3">3</option> 
+                            <option value="4">4</option> 
+                            <option value="5">5</option> 
+                            <option value="9">9</option> 
+                            <option value="10">10</option> 
+                            <option value="12">12</option> 
+                            <option value="13">13</option> 
+                            <option value="14">14</option> 
+                            <option value="15">15</option> 
+                            <option value="16">16</option>
+                            <option value="Custom">Custom</option>  
+                        </select><br><br>
+                        <label for="chndesc">Channel Description:</label><br>
+                        <input type="text" maxlength="200" name="chndesc"><br><br> 
                     </div>
                     <div class="modal-footer" id="nodemodalfooter">
                         <button type="button" class='btn me-auto' data-bs-dismiss="modal">Close</button>
