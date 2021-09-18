@@ -348,7 +348,7 @@ function changeChannelSetting(a){
     formDOM['ogname'].value = name;
     formDOM['chnname'].value = name;
     // formDOM['chninp'].value =[name]['inp'];
-    formDOM['chntype'].value = chninfo[name]['inp'];
+    formDOM['chntype'].value = chninfo[name]['type'];
     formDOM['chnpin'].value = chninfo[name]['pin'];
     formDOM['chndesc'].value = chninfo[name]['desc'];
 
