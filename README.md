@@ -16,7 +16,7 @@
 + [ESPHub API Documentation](https://github.com/NguyenQuang-10/ESPHub/tree/master/ESPHub)
 + [Arduino Library Documentation](https://github.com/NguyenQuang-10/ESPHub/tree/master/esp_firmware)
 
-## [Examples & Tutorial](https://github.com/NguyenQuang-10/ESPHub/tree/master/examples)
+## [Examples & Tutorial](https://github.com/NguyenQuang-10/ESPHub/blob/master/tutorial.md)
 
 ## What's coming in updates
 + Probably porting front end JS to ReactJS if requested
