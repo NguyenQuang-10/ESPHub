@@ -2,6 +2,7 @@
 
 ## Step 1: Setting up the files
 - Download the repo
+- Locate the esphub_library directory within the esp_firmware directory, and copy it to where you keep your Arduino library
 - Locate the example.ino Arduino sketch file within the **esp_firmware** directory, use Arduino to flash an ESP8266 with the firmware, keep the ESP8266 running with serial monitor open
 - Clone the repo onto your Raspberry Pi or central host device.
 - Download dependencies
