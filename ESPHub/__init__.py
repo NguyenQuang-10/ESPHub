@@ -44,14 +44,20 @@ class ESPHub:
     ANALOG = "PWM"
     CUSTOM = "CST"
 
-    def __init__(self,socketio, app):
+    def __init__(self,socketio, app, serverport, ifport):
+
+        # CONSTANTS
+        self.PING_TIMEOUT = 10
+
         self.ws = socketio
         # socketio require app for context stuff
         self.app = app
+        self.serverport = serverport
+        self.ifport = ifport
         self.__tcpserver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Let user decide port from a config file later
-        self.__tcpserver.bind(("0.0.0.0", 5501))
+        self.__tcpserver.bind(("0.0.0.0", self.serverport))
         # self.__udpserver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # self.__udpserver.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
@@ -84,7 +90,7 @@ class ESPHub:
             msg += b' ' * (64 - len(msg))
             return msg
         else:
-            raise "[ERROR] TCP Socket message too big"
+            print("[ERROR] TCP Socket message too big")
         
     def __send_to_node(self,ip, msg):
         send_target = self.tcp_ip_conn_table[ip]
@@ -95,14 +101,16 @@ class ESPHub:
 
     def __recv_from_node(self,ip):
         conn = self.tcp_ip_conn_table[ip]
-        conn.settimeout(3)
+        conn.settimeout(self.PING_TIMEOUT)
         while True:
             try:
                 conn.send(self.__pad_msg("PING\n".encode('ascii')))
                 msg = conn.recv(64)
+                # ignore and flush buffer when broken-up packet is recieve
+                if len(msg) < 64:
+                    conn.recv(64-len(msg))
+                    continue
                 msg_parse = msg.strip().decode('ascii').split('\n')
-
-                # print(msg_parse)
 
                 # [0] is the identifier, the rest is the pin value array
                 if (msg_parse[0] == "PST"):
@@ -129,31 +137,62 @@ class ESPHub:
                 break
 
 
+    def get_ip(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # doesn't even have to be reachable
+            s.connect(('10.255.255.255', 1))
+            IP = s.getsockname()[0]
+        except Exception:
+            IP = '127.0.0.1'
+        finally:
+            s.close()
+        return IP
+
     # Message size always smaller than 64 bytes
     # ip : ip address of recipient
     # chnname : the name of the channel that the data is sent under
     # inptype: 
     #       ESPHub.DIGITAL : value is 0 or 1 (on or off)
     #       ESPHub.ANALOG : value is between 0 to 255
-    #       ESPHub.CUSTOM: data is processed by custom code on recipient
     # pin: GPIO pin to be affected on ESP8266, only useful if using inptype of DIGITAL or CUSTOM, if using CUSTOM let it be none
     # value: the value to be sent
-    def send_cmd(self, ip, chnname, inptype, pin, value):
-        if ip in self.tcp_ip_conn_table:
-            if pin != 'Custom':
-                msg = "CMD" + "\n" + inptype + "\n" + str(pin) + "\n" + str(value) + "\n"
-                self.__send_to_node(ip, msg)
-            elif pin == 'Custom':
-                # print(chnname)
-                if chnname not in self.cst_chn_func_table:
-                    msg = "CMD" + "\n" + "CST" + "\n" + chnname + "\n" + str(value) + "\n"
-                    self.__send_to_node(ip, msg)
-                else:
-                    self.cst_chn_func_table[chnname]({"ip": ip, "inptype": inptype ,"value": value})
-        else:
-            raise f"[DISCONNECTED] Node {ip} is disconnected, can't send instruction"
-            emit('log', [f"[ERROR] Node with IP:{data['ip']} is not connected", "error"])
-        
+    def route_cmd(self, data):
+
+        ip = data["ip"]
+        chnname = data["chnname"]
+        inptype = data["type"].upper()
+        pin = data["pin"]
+        value = data['value']
+
+
+        if pin != 'Custom':
+            if ip in self.tcp_ip_conn_table:
+                self.send_cmd(data)
+            else:
+                print(f"[DISCONNECTED] Node {ip} is disconnected, can't send instruction")
+                emit('log', [f"[ERROR] Node with IP:{data['ip']} is not connected", "error"])
+    
+        elif pin == 'Custom':
+            # print(chnname)
+            if chnname not in self.cst_chn_inp_func_table:
+                self.send_cmd(data)
+            else:
+                self.cst_chn_inp_func_table[chnname](data)
+
+    def send_cmd(self,data):
+        ip = data["ip"]
+        chnname = data["chnname"]
+        inptype = data["type"].upper()
+        pin = data["pin"]
+        value = data['value']   
+
+        if pin != 'Custom':
+            msg = "CMD" + "\n" + inptype + "\n" + str(pin) + "\n" + str(value) + "\n"
+            self.__send_to_node(ip, msg) 
+        elif pin == 'Custom':    
+            msg = "CMD" + "\n" + "CST" + "\n" + chnname + "\n" + str(value) + "\n"
+            self.__send_to_node(ip, msg)
 
     def __get_pin_state(self, ip):
         msg = "REQ" + '\n' + "PST" + "\n"
@@ -195,22 +234,67 @@ class ESPHub:
     # open flask server and tcp server
     def run(self):
         self.open_tcp()
+        print("---------------------------------------------------------")
+        print(f"Access the web interface at {self.get_ip()}:{self.ifport}")
+        print("---------------------------------------------------------")
         self.ws.run(self.app, host='0.0.0.0', debug=False)
 
     # Broadcast bind message (for later feature not implemented yet)
-    def __udp_broadcast(self):
-        start_time = time.time()
-        # start_length = len(self.tcp_ip_conn_table)
-        bindMessage = "&!#@^OpESPHub_Bind"
-        bindMessage += ' ' * (64 - len(bindMessage))
-        while (time.time() - start_time < 10):            
-            self.__udpserver.sendto(bindMessage.encode("ascii"), ("192.168.1.255",5500))
-            # if (len(self.tcp_ip_conn_table) >)
+    # def __udp_broadcast(self):
+    #     start_time = time.time()
+    #     # start_length = len(self.tcp_ip_conn_table)
+    #     bindMessage = "&!#@^OpESPHub_Bind"
+    #     bindMessage += ' ' * (64 - len(bindMessage))
+    #     while (time.time() - start_time < 10):            
+    #         self.__udpserver.sendto(bindMessage.encode("ascii"), ("192.168.1.255",5500))
+    #         # if (len(self.tcp_ip_conn_table) >)
 
-    def udp_discovery(self):
-        udp_thread = threading.Thread(target=self.__udp_broadcast)
-        udp_thread.start()
+    # def udp_discovery(self):
+    #     udp_thread = threading.Thread(target=self.__udp_broadcast)
+    #     udp_thread.start()
         
+
+
+def create_app(test_config=None):
+    # create and configure the app
+    app = Flask(__name__, instance_relative_config=True, template_folder=os.path.join(CWD, "frontend"))
+    app.config.from_mapping(
+        SECRET_KEY='dev',
+        DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
+    )
+
+    if test_config is None:
+        # load the instance config, if it exists, when not testing
+        app.config.from_pyfile('config.py', silent=True)
+    else:
+        # load the test config if passed in
+        app.config.from_mapping(test_config)
+
+    # ensure the instance folder exists
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
+
+
+    return app
+
+app = create_app()
+socketio = SocketIO(app)
+esphub = ESPHub(socketio,app, 5501, 5000)
+
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
 def getNodeID(nodename):
     dbcur.execute(f"SELECT * FROM Nodes WHERE name='{nodename}'")
     try:
@@ -227,7 +311,7 @@ def get_html(relative_file_path):
 
 def getNodesInfo():
     hostname = socket.gethostname()
-    ip = socket.gethostbyname(hostname)
+    ip = get_ip()
     nodejson = {}
     nodejson["platformdata"] = {}
     nodejson["platformdata"]["hostname"] = hostname
@@ -262,7 +346,7 @@ def getNodesInfo():
                     try:
                         channelValue = esphub.pin_state[nodeip][chn[1]]
                     except KeyError as err:
-                        print(err)
+                        pass
                 else:
                     channelValue = esphub.pin_state[nodeip][int(chn[3])]
             nodejson['nodes'][nodename]['channels'][chn[1]] = {
@@ -274,34 +358,6 @@ def getNodesInfo():
 
     # nodestr = json.dumps(nodejson, indent=4)
     return nodejson
-
-def create_app(test_config=None):
-    # create and configure the app
-    app = Flask(__name__, instance_relative_config=True, template_folder=os.path.join(CWD, "frontend"))
-    app.config.from_mapping(
-        SECRET_KEY='dev',
-        DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
-    )
-
-    if test_config is None:
-        # load the instance config, if it exists, when not testing
-        app.config.from_pyfile('config.py', silent=True)
-    else:
-        # load the test config if passed in
-        app.config.from_mapping(test_config)
-
-    # ensure the instance folder exists
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
-
-
-    return app
-
-app = create_app()
-socketio = SocketIO(app)
-esphub = ESPHub(socketio,app)
 
 @app.route('/')
 def landing():
@@ -382,7 +438,7 @@ def validateNewChannel(data):
 
 @socketio.on('deleteComponent')
 def deleteComponent(data):
-    print(data)
+    # print(data)
     if (data['type'] == 'node'):
         dbcur.execute(f"DELETE FROM Channels WHERE node_id='{getNodeID(data['node'])}'")
         dbcur.execute(f"DELETE FROM Nodes WHERE name='{data['node']}' ")
@@ -396,7 +452,8 @@ def handleInput(data):
     print('Input data: ', end='')
     print(data)
     try:
-        esphub.send_cmd(data["ip"], data["chnname"],data["type"].upper(), data["pin"], data['value'])
+        # esphub.route_cmd(data["ip"], data["chnname"],data["type"].upper(), data["pin"], data['value'])
+        esphub.route_cmd(data)
         # this won't get executed if node not connected because line above would fail first
         if data["pin"] == 'Custom':
             esphub.pin_state[data["ip"]][data['chnname']] = data['value']
